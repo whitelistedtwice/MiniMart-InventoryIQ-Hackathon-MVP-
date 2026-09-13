@@ -1,9 +1,12 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.routes import ai, analytics, dashboard, inventory, settings
 from app.contracts.api import ApiError
 from app.core.errors import InventoryIQError
+
+load_dotenv()
 
 app = FastAPI(title="InventoryIQ API")
 

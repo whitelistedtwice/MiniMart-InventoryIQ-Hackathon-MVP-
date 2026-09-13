@@ -12,6 +12,12 @@ next-env.d.ts
 .env.local
 .env*.local
 
+# Google service-account credentials
+service-account*.json
+service_account*.json
+*service-account*.json
+credentials*.json
+
 # Python
 __pycache__/
 *.pyc

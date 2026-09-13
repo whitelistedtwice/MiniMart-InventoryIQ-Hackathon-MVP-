@@ -13,7 +13,7 @@ The authoritative product specification remains
 InventoryIQ is a layered backend with a thin frontend display layer.
 
 ``` text
-Google Sheets (future Phase 2)
+Google Sheets (Phase 2: gspread, read-only)
         ↓
 Data Access (app/data_access)
         ↓
