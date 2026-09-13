@@ -242,21 +242,24 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Owner: Phase 15
 - Verification: settings response reflects configured env values; no DB.
 
-## C-015 Frontend has no API client / base-URL configuration yet
+## C-015 Frontend API client / base-URL configuration
 
 - Severity: MEDIUM
-- Status: OPEN
+- Status: RESOLVED
 - Area: Frontend foundation
-- Discovered: Phase 9
-- Description: `frontend/` contains no fetch/API code and no base-URL config.
-  Backend contract compatibility is verified (types.ts mirrors contracts;
-  CORS live-tested). Phase 10 must add an API client using
-  `NEXT_PUBLIC_API_BASE_URL` (dev default `http://localhost:8000`) and must
-  not hardcode business data.
-- Required resolution: Phase 10 adds the API client with
-  `NEXT_PUBLIC_API_BASE_URL` (dev default `http://localhost:8000`).
-- Owner: Phase 10
-- Verification: frontend page fetches live backend in dev; build passes.
+- Discovered: Phase 9, resolved Phase 10
+- Description: Phase 9 found no fetch/API code and no base-URL config in
+  `frontend/`. Phase 10 added `lib/api/config.ts`
+  (`NEXT_PUBLIC_API_BASE_URL`, dev default `http://localhost:8000`),
+  `lib/api/client.ts` (network/server/invalid error taxonomy, never surfaces
+  raw backend messages), and `lib/api/routes.ts` (existing endpoint paths).
+  Pages do not consume it yet — that is intentional; feature pages arrive in
+  Phases 11+.
+- Required resolution: resolved in Phase 10. Later phases must use this client
+  (and call `/api/v1/ai/*` separately/lazily) rather than fetching directly.
+- Owner: Phase 10 (done)
+- Verification: production build + type check pass; no secret appears in the
+  built client bundle; placeholder routes render.
 
 ## C-016 Gemini is architecturally lazy — keep it that way
 
@@ -349,3 +352,22 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
   upstream text in error messages if user-facing polish is needed.
 - Owner: Phase 19 (final security/reliability audit)
 - Verification: error envelope inspection (already in Phase 8 tests).
+
+## C-022 Top-bar controls are presentational only
+
+- Severity: LOW
+- Status: OPEN
+- Area: Frontend shell / UX
+- Discovered: Phase 10
+- Description: The shared top bar renders the reference's search field,
+  decorative bell, and business identity. Search has no behaviour yet and the
+  bell has no notification system (none exists in the MVP). This matches the
+  approved reference and is intentional for the shell, but a demo user could
+  type in the box and see nothing happen.
+- Required resolution: wire the Inventory page's own search/filter (per
+  INVENTORY_UI.md) in Phase 12, then keep or remove the global top-bar field
+  so there are not two competing search inputs. Keep the bell decorative; do
+  not add a notification system.
+- Owner: Phase 12
+- Verification: search filters the product list; no duplicate search control;
+  no notification system added.

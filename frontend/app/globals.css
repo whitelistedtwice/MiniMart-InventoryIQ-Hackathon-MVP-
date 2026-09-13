@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  InventoryIQ design tokens (Phase 10 foundation).
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  Light, clean, simple, modern, professional.
+  Blue = primary, green = healthy, red = urgent, orange/yellow = warning,
+  lavender/purple = AI content. These tokens are the single source of the
+  shared visual language used by every page.
+*/
+@theme {
+  --color-canvas: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-line: #e6eaf1;
+  --color-line-strong: #d6dde7;
+
+  --color-ink: #14243d;
+  --color-ink-soft: #3f4d63;
+  --color-muted: #7a8798;
+
+  --color-brand: #2563eb;
+  --color-brand-strong: #1d4ed8;
+  --color-brand-soft: #eef4ff;
+
+  --color-success: #16a34a;
+  --color-success-soft: #e8f6ee;
+
+  --color-danger: #dc2626;
+  --color-danger-soft: #fdecec;
+
+  --color-excess: #ea580c;
+  --color-excess-soft: #fdeee3;
+
+  --color-warning: #b7791f;
+  --color-warning-soft: #fdf4e0;
+
+  --color-ai: #6d28d9;
+  --color-ai-soft: #f4f0fe;
+  --color-ai-line: #e6ddfb;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
