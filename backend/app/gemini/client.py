@@ -8,7 +8,7 @@ context, returns plain-language JSON, and that JSON is validated against
 Transport is the Gemini REST API through the already-installed ``httpx``
 client, so no extra SDK is added and the client stays easy to replace or
 mock. Credentials come from ``GEMINI_API_KEY``; the model from
-``GEMINI_MODEL`` (default ``gemini-2.0-flash``).
+``GEMINI_MODEL`` (default ``gemini-3.5-flash``).
 
 Failure policy: Gemini is optional. Any failure (missing key, timeout,
 HTTP error, malformed/empty response) is converted into
@@ -31,8 +31,11 @@ from app.contracts.api import AIExplanationResponse
 from app.core.errors import GeminiError
 
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
-_DEFAULT_MODEL = "gemini-2.0-flash"
-_TIMEOUT_SECONDS = 15.0
+# Verified live against this account's key (Phase 9 preflight);
+# gemini-2.0-flash returns 404 "no longer available" for new deployments.
+_DEFAULT_MODEL = "gemini-3.5-flash"
+# Live calls to gemini-3.5-flash observed at ~18s; 15s caused spurious timeouts.
+_TIMEOUT_SECONDS = 45.0
 
 _SYSTEM_INSTRUCTION = (
     "You explain verified inventory facts to a small shop owner in simple, "

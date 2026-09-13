@@ -62,6 +62,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
 
+from app.core.clock import business_today
 from app.contracts.analytics import (
     DemandMetrics,
     DemandTrend,
@@ -83,9 +84,10 @@ def compute_product_analytics(
     """Deterministic analytics for one processed product.
 
     `as_of` is the reference "today" for shipment timing; defaults to
-    date.today(). Tests pass it explicitly for reproducibility.
+    today in the business timezone (Asia/Phnom_Penh). Tests pass it
+    explicitly for reproducibility.
     """
-    as_of = as_of or date.today()
+    as_of = as_of or business_today()
     demand = _demand(processed)
     inventory = _inventory(processed, demand)
     shipment = _shipment(processed, inventory, as_of)
