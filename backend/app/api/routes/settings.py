@@ -1,8 +1,6 @@
-"""
-Settings API routes.
+"""Settings / connection API route (Phase 8)."""
 
-Phase 15 will wire this to real data. Phase 1 defines the contract only.
-"""
+import os
 
 from fastapi import APIRouter
 
@@ -13,5 +11,9 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 @router.get("", response_model=SettingsResponse)
 def get_settings() -> SettingsResponse:
-    """Return current settings state."""
-    return SettingsResponse()
+    """Return Google Sheets connection state (no secrets)."""
+    connected = bool(
+        os.environ.get("GOOGLE_SHEET_ID")
+        and os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
+    )
+    return SettingsResponse(sheets_connected=connected)

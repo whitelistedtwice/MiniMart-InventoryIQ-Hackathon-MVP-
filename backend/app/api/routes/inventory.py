@@ -1,63 +1,44 @@
-"""
-Inventory / product API routes.
-
-Phase 12 will wire this to real data. Phase 1 defines the contract only.
-"""
+"""Inventory / product API routes (Phase 8)."""
 
 from datetime import date, datetime
+from typing import Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from app.contracts.ai_context import AIProductContext, AIRecommendationContext
-from app.contracts.analytics import (
-    DemandMetrics,
-    DemandTrend,
-    FinancialMetrics,
-    InventoryMetrics,
-    ProductAnalytics,
-    ShipmentProjection,
-)
+from app.ai_context.builder import build_recommendation_context
+from app.api.dependencies import get_as_of, get_raw_sheets
 from app.contracts.api import ProductDetailResponse, ProductListItem
-from app.contracts.recommendation import RecommendationAction, RecommendationResult
+from app.services.analysis import analyze, find
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 
 @router.get("", response_model=list[ProductListItem])
-def list_products() -> list[ProductListItem]:
-    """Return the inventory product list."""
-    return []
+def list_products(
+    raw: dict[str, list[dict[str, Any]]] = Depends(get_raw_sheets),
+    as_of: Optional[date] = Depends(get_as_of),
+) -> list[ProductListItem]:
+    """Return the inventory product list, ordered by name."""
+    analyses = analyze(raw, as_of)
+    ordered = sorted(
+        analyses,
+        key=lambda item: (item.analytics.product_name.casefold(), item.analytics.product_id),
+    )
+    return [item.list_item() for item in ordered]
 
 
 @router.get("/{product_id}", response_model=ProductDetailResponse)
-def get_product(product_id: str) -> ProductDetailResponse:
-    """Return full product detail for one product."""
-    analytics = ProductAnalytics(
-        product_id=product_id,
-        product_name="Sample Product",
-        demand=DemandMetrics(trend=DemandTrend.UNAVAILABLE),
-        inventory=InventoryMetrics(current_stock=None),
-        shipment=ShipmentProjection(),
-        financial=FinancialMetrics(),
-    )
-    recommendation = RecommendationResult(
-        product_id=product_id,
-        product_name=analytics.product_name,
-        action=RecommendationAction.UNAVAILABLE,
-    )
-    ai_context = AIRecommendationContext(
-        generated_at=datetime.now(),
-        product=AIProductContext(
-            product_id=product_id,
-            product_name=analytics.product_name,
-            current_stock=None,
-            recommendation_action=RecommendationAction.UNAVAILABLE,
-        ),
-    )
+def get_product(
+    product_id: str,
+    raw: dict[str, list[dict[str, Any]]] = Depends(get_raw_sheets),
+    as_of: Optional[date] = Depends(get_as_of),
+) -> ProductDetailResponse:
+    """Return full detail for exactly one product."""
+    item = find(analyze(raw, as_of), product_id)
     return ProductDetailResponse(
-        product_id=product_id,
-        analytics=analytics,
-        recommendation=recommendation,
-        ai_context=ai_context,
-        historical_inventory=[],
+        product_id=item.analytics.product_id,
+        analytics=item.analytics,
+        recommendation=item.recommendation,
+        ai_context=build_recommendation_context(item.context(), generated_at=datetime.now()),
+        historical_inventory=item.analytics.inventory_history,
     )
