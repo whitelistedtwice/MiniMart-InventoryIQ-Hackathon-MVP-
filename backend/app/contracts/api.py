@@ -79,9 +79,14 @@ class SettingsResponse(BaseModel):
 
 
 class AIExplanationResponse(BaseModel):
-    """Plain-language explanation produced by Gemini from verified context."""
+    """Plain-language explanation produced by Gemini from verified context.
 
-    summary: str
+    When Gemini is unavailable or returns unusable output, ``ai_available``
+    is False and the content fields stay None. Failure is never replaced
+    with fabricated text.
+    """
+
+    summary: Optional[str] = None
     reason: Optional[str] = None
     action_explanation: Optional[str] = None
     future_note: Optional[str] = None

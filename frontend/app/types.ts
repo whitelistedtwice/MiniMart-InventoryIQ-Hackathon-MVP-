@@ -213,7 +213,7 @@ export interface SettingsResponse {
 }
 
 export interface AIExplanationResponse {
-  summary: string;
+  summary?: string | null;
   reason?: string | null;
   action_explanation?: string | null;
   future_note?: string | null;
