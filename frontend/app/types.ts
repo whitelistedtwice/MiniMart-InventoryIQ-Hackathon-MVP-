@@ -61,6 +61,13 @@ export interface RecommendationResult {
   reorder_timing?: string | null;
   incoming_stock_sufficient?: boolean | null;
   evidence: string[];
+  current_stock?: number | null;
+  incoming_quantity?: number | null;
+  days_of_stock_remaining?: number | null;
+  days_until_arrival?: number | null;
+  demand_trend?: DemandTrend;
+  target_stock_days?: number | null;
+  excess_units?: number | null;
 }
 
 // -------------------------------------------------------------------------

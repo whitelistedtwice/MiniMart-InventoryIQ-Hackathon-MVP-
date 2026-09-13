@@ -11,6 +11,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from .analytics import DemandTrend
+
 
 class RecommendationAction(str, Enum):
     """Allowed recommendation statuses."""
@@ -53,12 +55,21 @@ class RecommendationResult(BaseModel):
     )
     incoming_stock_sufficient: Optional[bool] = Field(
         None,
-        description="Whether incoming shipments cover the projected gap",
+        description="True if incoming shipments arrive before stock runs out; "
+        "False if stock runs out first; None when there is no incoming shipment",
     )
     evidence: list[str] = Field(
         default_factory=list,
         description="Short, verifiable reasons behind the recommendation",
     )
+    # Supporting metrics copied from verified analytics (facts, not recomputed).
+    current_stock: Optional[int] = Field(None, description="Verified current stock")
+    incoming_quantity: Optional[int] = Field(None, description="Verified incoming shipment quantity")
+    days_of_stock_remaining: Optional[float] = Field(None, description="Verified current stock coverage in days")
+    days_until_arrival: Optional[int] = Field(None, description="Verified days until next incoming shipment")
+    demand_trend: DemandTrend = Field(DemandTrend.UNAVAILABLE, description="Verified demand trend")
+    target_stock_days: Optional[int] = Field(None, description="Product's configured target coverage in days")
+    excess_units: Optional[float] = Field(None, description="Verified units above target coverage")
 
     def is_actionable(self) -> bool:
         return self.action in {
