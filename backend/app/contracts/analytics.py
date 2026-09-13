@@ -38,8 +38,16 @@ class InventoryMetrics(BaseModel):
     )
     inventory_value: Optional[Decimal] = Field(None, description="current_stock * unit_cost when both available")
     days_of_stock_remaining: Optional[float] = Field(None, description="Estimated days current stock will last")
-    stock_status: Optional[str] = Field(None, description="Human-readable status label")
-    stockout_risk: bool = Field(False, description="True when a stockout is projected before safe coverage")
+    stock_status: Optional[str] = Field(None, description="'low' | 'healthy' | 'excess' | None (unavailable)")
+    stockout_risk: Optional[bool] = Field(
+        None,
+        description="True when days_of_stock_remaining < lead_time_days. None when either input is unavailable.",
+    )
+    excess_units: Optional[float] = Field(
+        None,
+        description="Units above target coverage (current_stock - average_daily_sales * target_stock_days), floored at 0",
+    )
+    excess_value: Optional[Decimal] = Field(None, description="excess_units * unit_cost when both available")
 
 
 class ShipmentProjection(BaseModel):
@@ -85,3 +93,9 @@ class ProductAnalytics(BaseModel):
     inventory: InventoryMetrics
     shipment: ShipmentProjection
     financial: FinancialMetrics
+    sales_history: list[tuple[date, int]] = Field(
+        default_factory=list, description="Chronological (date, quantity_sold) pairs for charts"
+    )
+    inventory_history: list[tuple[date, int]] = Field(
+        default_factory=list, description="Chronological (date, quantity_on_hand) pairs for charts"
+    )

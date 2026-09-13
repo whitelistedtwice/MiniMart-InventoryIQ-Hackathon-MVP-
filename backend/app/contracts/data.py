@@ -19,11 +19,11 @@ class Product(BaseModel):
     product_name: str = Field(..., description="Display name; may include Khmer, English, or mixed text")
     category: Optional[str] = Field(None, description="Product category")
     unit: Optional[str] = Field(None, description="Unit of sale, e.g. 'bottle', 'pack'")
-    unit_cost: Optional[Decimal] = Field(None, description="Cost per unit in local currency")
-    selling_price: Optional[Decimal] = Field(None, description="Selling price per unit")
+    unit_cost: Optional[Decimal] = Field(None, ge=0, description="Cost per unit in local currency")
+    selling_price: Optional[Decimal] = Field(None, ge=0, description="Selling price per unit")
     supplier: Optional[str] = Field(None, description="Supplier name")
-    lead_time_days: Optional[int] = Field(None, description="Typical supplier lead time in days")
-    target_stock_days: Optional[int] = Field(None, description="Desired stock coverage in days")
+    lead_time_days: Optional[int] = Field(None, ge=0, description="Typical supplier lead time in days")
+    target_stock_days: Optional[int] = Field(None, ge=0, description="Desired stock coverage in days")
 
 
 class Sale(BaseModel):

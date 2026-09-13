@@ -7,7 +7,7 @@ analysis-ready structures.
 
 from collections import defaultdict
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 
 from app.contracts.data import InventorySnapshot, Product, Sale, Shipment
 
@@ -42,7 +42,7 @@ def process(
     inventory: list[InventorySnapshot],
     shipments: list[Shipment],
 ) -> list[ProcessedProduct]:
-    """Group and normalize validated source data by product."""
+    """Group validated source data by product, chronologically sorted."""
     sales_by_product: dict[str, list[Sale]] = defaultdict(list)
     inventory_by_product: dict[str, list[InventorySnapshot]] = defaultdict(list)
     shipments_by_product: dict[str, list[Shipment]] = defaultdict(list)
@@ -54,6 +54,13 @@ def process(
     for shipment in shipments:
         shipments_by_product[shipment.product_id].append(shipment)
 
+    for records in sales_by_product.values():
+        records.sort(key=lambda s: s.date)
+    for records in inventory_by_product.values():
+        records.sort(key=lambda s: s.date)
+    for records in shipments_by_product.values():
+        records.sort(key=lambda s: s.expected_arrival)
+
     return [
         ProcessedProduct(
             product=p,
@@ -63,3 +70,13 @@ def process(
         )
         for p in products
     ]
+
+
+def build_analysis_ready(
+    raw: dict[str, list[dict[str, Any]]],
+) -> list[ProcessedProduct]:
+    """Full Phase 2 → Phase 3 pipeline: raw sheet rows -> analysis-ready data."""
+    from app.validation.validator import validate_sheets
+
+    products, sales, inventory, shipments = validate_sheets(raw)
+    return process(products, sales, inventory, shipments)

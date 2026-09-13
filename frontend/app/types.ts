@@ -80,8 +80,10 @@ export interface InventoryMetrics {
   current_stock?: number | null; // null means unavailable, not zero
   inventory_value?: number | null;
   days_of_stock_remaining?: number | null;
-  stock_status?: string | null;
-  stockout_risk: boolean;
+  stock_status?: string | null; // 'low' | 'healthy' | 'excess' | null
+  stockout_risk?: boolean | null; // null when undeterminable
+  excess_units?: number | null;
+  excess_value?: number | null;
 }
 
 export interface ShipmentProjection {
@@ -107,6 +109,8 @@ export interface ProductAnalytics {
   inventory: InventoryMetrics;
   shipment: ShipmentProjection;
   financial: FinancialMetrics;
+  sales_history: Array<[string, number]>;
+  inventory_history: Array<[string, number]>;
 }
 
 // -------------------------------------------------------------------------
