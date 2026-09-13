@@ -12,7 +12,7 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 ## C-001 Google Sheets write capability unverified
 
 - Severity: HIGH
-- Status: OPEN
+- Status: OUT OF SCOPE
 - Area: Google Sheets / stock adjustment
 - Discovered: Phase 9
 - Description: Phase 2 verified READ only. `GOOGLE_SHEET_ID` and
@@ -20,14 +20,16 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
   service-account JSON exists in the repo, so the safe write/read/restore
   preflight could not be performed. The write path is entirely unimplemented
   in code (`app/data_access/sheets.py` has no write functions), though gspread
-  6.2.1 natively supports cell updates.
-- Required resolution: obtain a service account with Editor access to the demo
-  sheet; add a single write seam in the data-access layer; run the safe
-  preflight (update one test cell → read back → verify Shipments untouched →
-  restore → read back).
-- Owner: Phase 13
-- Verification: real write preflight log showing original value, changed
-  value, unchanged Shipments row count, restored value.
+  6.2.1 natively supports cell updates. The current MVP does NOT implement
+  manual stock adjustment or any Google Sheets write-back, so write
+  capability is not required.
+- Required resolution: none for the current MVP. If write-back is ever
+  approved, obtain an Editor service account, add a single write seam, and run
+  the safe preflight (update one test cell → read back → verify Shipments
+  untouched → restore → read back).
+- Owner: None (out of MVP scope; re-open only with explicit approval)
+- Verification: frontend negative-scope scan shows no Adjust Stock or
+  write-back UI (Phase 11).
 
 ## C-002 `sheets_connected` is environment-presence only
 
@@ -114,17 +116,22 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Severity: MEDIUM
 - Status: OPEN
 - Area: Dashboard / API contract
-- Discovered: Phase 6, confirmed Phase 9
-- Description: `build_business_brief_context` classifies non-actionable
-  products (incl. `UNAVAILABLE`) as `healthy_items`. UNAVAILABLE means
-  "cannot judge" — presenting it as healthy is misleading for Business
-  Health.
-- Required resolution: additive contract change: `unavailable_items: int` on
-  `DashboardSummary`/`AIBusinessBriefContext`; brief builder stops counting
-  UNAVAILABLE as healthy; frontend types synced.
-- Owner: Phase 11
-- Verification: dashboard response with one UNAVAILABLE product shows
-  `unavailable_items: 1`, `healthy_items` excludes it.
+- Discovered: Phase 6, re-confirmed Phase 11
+- Description: `build_business_brief_context` counts every non-actionable
+  product — including `UNAVAILABLE` — as `healthy_items`. Phase 11 evidence:
+  with all inventory snapshots removed, the Dashboard rendered
+  "Need Attention 0 / Healthy 12" even though every product's stock was
+  unknown (while `total_inventory_value` correctly showed "—"). The Dashboard
+  displays backend truth verbatim; it cannot distinguish the two without a
+  contract change.
+- Required resolution: additive backend contract change: `unavailable_items`
+  on `DashboardSummary`/`AIBusinessBriefContext`; brief stops counting
+  UNAVAILABLE as healthy; frontend types and health card synced.
+- Owner: Not scheduled — backend contract change (the presentation-only
+  Phase 11 cannot resolve it; requires explicit approval per the
+  no-silent-contract-change rule).
+- Verification: dashboard with one UNAVAILABLE product shows
+  `unavailable_items: 1` and excludes it from `healthy_items`.
 
 ## C-008 Repeated Google Sheets reads per logical operation
 
@@ -159,17 +166,17 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 ## C-010 Business Health has no invented score (keep it that way)
 
 - Severity: MEDIUM
-- Status: OPEN
+- Status: RESOLVED
 - Area: Dashboard
-- Discovered: Phase 9
-- Description: Current dashboard data uses transparent counts (items needing
-  attention, healthy items, total inventory value). No 0–100 score exists —
-  this must not be invented. An explicit "unavailable products" indicator is
-  missing (see C-007).
-- Required resolution: Phase 11 dashboard implements transparent indicators
-  only; any formula requires explicit approval.
-- Owner: Phase 11
-- Verification: dashboard shows counts/value only; no score anywhere.
+- Discovered: Phase 9, resolved Phase 11
+- Description: Phase 11 implemented transparent indicators only: "Need
+  Attention" (`items_needing_attention`), "Healthy" (`healthy_items`), and
+  "Total Inventory Value" (`total_inventory_value`, with null shown as "—").
+  No score, percentage, or grade is displayed or calculated.
+- Required resolution: resolved by the Phase 11 Dashboard implementation.
+- Owner: Phase 11 (done)
+- Verification: Dashboard source and rendered screenshots (desktop, mobile,
+  empty, missing-data); no score string exists in the dashboard code.
 
 ## C-011 Demo dataset exists but is not yet loaded into a real Sheet
 
@@ -209,22 +216,22 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 ## C-013 Manual stock adjustment semantics — decision locked
 
 - Severity: HIGH
-- Status: OPEN (decision made; implementation pending)
-- Area: Stock adjustment (Phase 13)
+- Status: OUT OF SCOPE
+- Area: Stock adjustment
 - Discovered: Phase 9
-- Description: Locked MVP semantics, honoring the Phase 3 duplicate
-  `(product_id, date)` rule: an adjustment UPDATES the product's latest
-  inventory snapshot row in place (locate row with max date ≤ today via
-  gspread row lookup; update only its `quantity_on_hand` cell; date is NOT
-  changed). If the product has NO inventory rows, append one new row dated
-  today. Shipments are never touched. After the write, the client triggers a
-  normal refresh (re-read → recalculate). Zero stock is a valid adjustment;
-  negative is rejected by validation.
-- Required resolution: implement in Phase 13 using the verified write seam
-  from C-001; row-location must handle the sheet's header offset.
-- Owner: Phase 13
-- Verification: write → read-back → analytics reflect new stock → duplicate
-  rule never triggered → Shipments untouched.
+- Description: The current MVP explicitly does NOT support manual stock
+  adjustment or Inventory → Google Sheets write-back, and the frontend must
+  not represent it. If scope is ever approved to change, the locked semantics
+  are: update the product's latest inventory snapshot row in place (date
+  unchanged) so the Phase 3 duplicate `(product_id, date)` rule is never
+  triggered; append a new row dated today only when the product has no
+  snapshots; never touch Shipments; then refresh (re-read → recalculate).
+  Zero stock is valid; negative is rejected by validation.
+- Required resolution: none for the current MVP. Re-open only with explicit
+  scope approval; implement using a verified write seam (see C-001).
+- Owner: None (out of MVP scope)
+- Verification: frontend negative-scope scan shows no Adjust Stock or stock
+  editing UI (Phase 11).
 
 ## C-014 Business Profile persistence — decision locked
 
@@ -371,3 +378,22 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Owner: Phase 12
 - Verification: search filters the product list; no duplicate search control;
   no notification system added.
+
+## C-023 No currency is provided by the backend
+
+- Severity: LOW
+- Status: OPEN
+- Area: Dashboard / Analytics / API contract
+- Discovered: Phase 11
+- Description: Financial values (e.g. `total_inventory_value`) have no
+  currency in any contract, so the Dashboard shows e.g. "1,180.05" without a
+  symbol. During Phase 11 verification, Gemini's brief independently wrote
+  "$1,180.05" — the AI inferred a currency the deterministic layer never
+  stated. The Settings UI spec expects a currency field "when supported";
+  C-014 plans env-based business profile in Phase 15.
+- Required resolution: add currency to the business profile/configuration
+  (Phase 15, with C-014) and expose it to the frontend; format financial
+  values consistently from that value.
+- Owner: Phase 15
+- Verification: financial values display the configured currency; no
+  hardcoded currency symbol exists in the frontend.

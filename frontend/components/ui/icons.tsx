@@ -19,7 +19,10 @@ export type IconName =
   | "refresh"
   | "sparkles"
   | "inbox"
-  | "alert";
+  | "alert"
+  | "check"
+  | "coins"
+  | "arrow-right";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -96,6 +99,20 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 10v4M12 17h.01" />
     </>
   ),
+  check: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+    </>
+  ),
+  coins: (
+    <>
+      <ellipse cx="9" cy="7" rx="6" ry="3" />
+      <path d="M3 7v5c0 1.7 2.7 3 6 3s6-1.3 6-3V7" />
+      <path d="M15 12.5c2.9.3 6 1.5 6 3v0c0 1.7-2.7 3-6 3-1.6 0-3.1-.3-4.2-.8" />
+    </>
+  ),
+  "arrow-right": <path d="M5 12h14M13 6l6 6-6 6" />,
 };
 
 export function Icon({ name, ...props }: IconProps) {
