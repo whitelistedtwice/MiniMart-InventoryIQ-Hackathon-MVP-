@@ -14,7 +14,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from .analytics import DemandTrend
-from .recommendation import RecommendationAction
+from .recommendation import RecommendationAction, RecommendationPriority
 
 
 class AIProductContext(BaseModel):
@@ -28,14 +28,42 @@ class AIProductContext(BaseModel):
         description="Verified latest stock. None means unavailable.",
     )
     demand_trend: DemandTrend = DemandTrend.UNAVAILABLE
+    average_daily_sales: Optional[float] = Field(
+        None,
+        description="Verified average units sold per day. None = no usable sales history.",
+    )
     days_of_stock_remaining: Optional[float] = None
     incoming_quantity: Optional[int] = None
     incoming_arrival_days: Optional[int] = None
     recommendation_action: RecommendationAction = RecommendationAction.UNAVAILABLE
+    priority: int = Field(
+        RecommendationPriority.UNAVAILABLE,
+        description="Mirrors RecommendationPriority; lower = more urgent",
+    )
     recommended_reorder_quantity: Optional[int] = None
+    reorder_timing: Optional[str] = Field(
+        None,
+        description="Verbatim timing guidance from the recommendation engine",
+    )
+    target_stock_days: Optional[int] = Field(
+        None,
+        description="Product's configured target coverage in days. None = not configured",
+    )
+    excess_units: Optional[float] = Field(
+        None,
+        description="Verified units above target coverage. None when undeterminable",
+    )
     inventory_value: Optional[float] = None
     financial_exposure: Optional[float] = None
     evidence: list[str] = Field(default_factory=list)
+
+    def is_actionable(self) -> bool:
+        """Same semantics as RecommendationResult.is_actionable."""
+        return self.recommendation_action in {
+            RecommendationAction.REORDER,
+            RecommendationAction.REDUCE_EXCESS,
+            RecommendationAction.MONITOR_PREPARE,
+        }
 
 
 class AIBusinessBriefContext(BaseModel):

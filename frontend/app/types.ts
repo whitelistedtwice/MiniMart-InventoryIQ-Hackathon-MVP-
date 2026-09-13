@@ -130,11 +130,16 @@ export interface AIProductContext {
   category?: string | null;
   current_stock?: number | null;
   demand_trend: DemandTrend;
+  average_daily_sales?: number | null;
   days_of_stock_remaining?: number | null;
   incoming_quantity?: number | null;
   incoming_arrival_days?: number | null;
   recommendation_action: RecommendationAction;
+  priority: number;
   recommended_reorder_quantity?: number | null;
+  reorder_timing?: string | null;
+  target_stock_days?: number | null;
+  excess_units?: number | null;
   inventory_value?: number | null;
   financial_exposure?: number | null;
   evidence: string[];
