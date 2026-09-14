@@ -4,7 +4,7 @@ import type { ProductListItem } from "@/app/types";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatDays, formatStock } from "./format";
+import { formatDays, formatStock } from "@/lib/format";
 
 /*
   Top Priorities.

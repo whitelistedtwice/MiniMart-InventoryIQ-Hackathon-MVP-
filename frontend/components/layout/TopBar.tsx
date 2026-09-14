@@ -1,26 +1,17 @@
 import { Icon } from "@/components/ui/icons";
+import { GlobalSearch } from "./GlobalSearch";
 import { MobileNav } from "./MobileNav";
 
 /**
- * Shared top bar. The search field, bell, and identity are shell visuals
- * from the approved reference. The bell is decorative (no notification
- * system exists) and the identity area is not an account control.
+ * Shared top bar. The search field submits into the Inventory page's
+ * authoritative search; the bell is decorative (no notification system
+ * exists) and the identity area is not an account control.
  */
 export function TopBar({ businessName }: { businessName: string }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface">
       <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="relative hidden w-full max-w-md sm:block">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-            <Icon name="search" width={18} height={18} />
-          </span>
-          <input
-            type="search"
-            placeholder="Search products, categories…"
-            aria-label="Search"
-            className="h-10 w-full rounded-lg border border-line bg-canvas pl-10 pr-3 text-sm text-ink placeholder:text-muted focus:border-brand focus:bg-surface focus:outline-none"
-          />
-        </div>
+        <GlobalSearch />
 
         <div className="ml-auto flex items-center gap-3">
           <span

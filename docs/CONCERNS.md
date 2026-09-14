@@ -363,21 +363,26 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 ## C-022 Top-bar controls are presentational only
 
 - Severity: LOW
-- Status: OPEN
+- Status: RESOLVED
 - Area: Frontend shell / UX
 - Discovered: Phase 10
-- Description: The shared top bar renders the reference's search field,
-  decorative bell, and business identity. Search has no behaviour yet and the
-  bell has no notification system (none exists in the MVP). This matches the
-  approved reference and is intentional for the shell, but a demo user could
-  type in the box and see nothing happen.
-- Required resolution: wire the Inventory page's own search/filter (per
-  INVENTORY_UI.md) in Phase 12, then keep or remove the global top-bar field
-  so there are not two competing search inputs. Keep the bell decorative; do
-  not add a notification system.
-- Owner: Phase 12
-- Verification: search filters the product list; no duplicate search control;
-  no notification system added.
+- Description: The shared top bar originally rendered the reference's search
+  field with no behaviour. Phase 12 resolved this: there is exactly ONE
+  product-search implementation (the Inventory page), and the top-bar
+  GlobalSearch submits into it — it navigates to `/inventory?q=…`, and the
+  Inventory page adopts the query through `useSearchParams` into its own
+  search state. No duplicate independent search state, no global fuzzy
+  search, no cross-entity search, and no search/notification backend
+  endpoint exist. The bell remains decorative (no notification system in the
+  MVP).
+- Required resolution: resolved in Phase 12.
+- Owner: Phase 12 (done)
+- Verification: `frontend/tests/inventory.spec.ts` —
+  "global search routes the query into the inventory list search" asserts
+  top-bar search → `/inventory?q=angkor` → page search holds the same query
+  and filters the list; "a late AI response from product A cannot overwrite
+  product B AI insight" and the list tests confirm no second search control
+  fires or exists.
 
 ## C-023 No currency is provided by the backend
 

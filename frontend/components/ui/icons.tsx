@@ -22,7 +22,10 @@ export type IconName =
   | "alert"
   | "check"
   | "coins"
-  | "arrow-right";
+  | "arrow-right"
+  | "arrow-left"
+  | "calendar"
+  | "truck";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -113,6 +116,21 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   "arrow-right": <path d="M5 12h14M13 6l6 6-6 6" />,
+  "arrow-left": <path d="M19 12H5M11 6l-6 6 6 6" />,
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 11h18" />
+    </>
+  ),
+  truck: (
+    <>
+      <path d="M3 7h11v9H3z" />
+      <path d="M14 10h4l3 3v3h-7z" />
+      <circle cx="7" cy="18" r="1.8" />
+      <circle cx="17.5" cy="18" r="1.8" />
+    </>
+  ),
 };
 
 export function Icon({ name, ...props }: IconProps) {

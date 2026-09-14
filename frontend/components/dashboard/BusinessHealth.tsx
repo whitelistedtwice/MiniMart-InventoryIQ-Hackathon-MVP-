@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { Icon, type IconName } from "@/components/ui/icons";
-import { formatCount, formatMoney } from "./format";
+import { formatCount, formatMoney } from "@/lib/format";
 
 /*
   Business health indicators.
