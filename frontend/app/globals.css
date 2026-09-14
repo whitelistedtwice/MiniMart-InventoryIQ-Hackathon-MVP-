@@ -1,12 +1,7 @@
 @import "tailwindcss";
 
 /*
-  InventoryIQ design tokens (Phase 10 foundation).
-
-  Light, clean, simple, modern, professional.
-  Blue = primary, green = healthy, red = urgent, orange/yellow = warning,
-  lavender/purple = AI content. These tokens are the single source of the
-  shared visual language used by every page.
+  InventoryIQ design tokens.
 */
 @theme {
   --color-canvas: #f5f7fb;
@@ -42,13 +37,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
 }
