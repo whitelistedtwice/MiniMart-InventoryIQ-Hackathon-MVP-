@@ -44,8 +44,11 @@ _SYSTEM_INSTRUCTION = (
     "product details. Never change, replace, or second-guess the given "
     "recommendation action or reorder quantity; explain them exactly as "
     "given. If a value is null it is unavailable: say so and do not assume "
-    "zero. Do not claim to know anything that is not in the context. Reply "
-    "only with the requested JSON."
+    "zero. Do not claim to know anything that is not in the context. "
+    "Money amounts are in the single currency stated by the context's "
+    "'currency' field. Never name or symbolize any currency other than that "
+    "value, and never add a currency name or symbol when the context does "
+    "not state one. Reply only with the requested JSON."
 )
 
 _RESPONSE_SCHEMA = {

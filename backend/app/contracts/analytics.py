@@ -10,7 +10,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class DemandTrend(str, Enum):
@@ -49,6 +49,16 @@ class InventoryMetrics(BaseModel):
     )
     excess_value: Optional[Decimal] = Field(None, description="excess_units * unit_cost when both available")
 
+    @field_serializer("inventory_value", "excess_value")
+    def _money_as_number(self, value: Optional[Decimal]) -> Optional[float]:
+        """Serialize money consistently as a JSON number.
+
+        Decimal stays the internal type for exact arithmetic, but the API
+        contract exposes numbers (the Dashboard summary already does), so the
+        frontend never has to parse differently-shaped money fields.
+        """
+        return float(value) if value is not None else None
+
 
 class ShipmentProjection(BaseModel):
     """Projection of incoming supplier stock.
@@ -82,6 +92,11 @@ class FinancialMetrics(BaseModel):
         None,
         description="Value tied up in current inventory (current_stock * unit_cost)",
     )
+
+    @field_serializer("revenue", "estimated_cost", "profit", "financial_exposure")
+    def _money_as_number(self, value: Optional[Decimal]) -> Optional[float]:
+        """Serialize money consistently as a JSON number (see InventoryMetrics)."""
+        return float(value) if value is not None else None
 
 
 class ProductAnalytics(BaseModel):

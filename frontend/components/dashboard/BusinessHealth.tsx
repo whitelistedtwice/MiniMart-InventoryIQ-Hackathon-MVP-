@@ -52,10 +52,12 @@ export function BusinessHealth({
   itemsNeedingAttention,
   healthyItems,
   totalInventoryValue,
+  currency,
 }: {
   itemsNeedingAttention: number;
   healthyItems: number;
   totalInventoryValue: number | null;
+  currency?: string | null;
 }) {
   const valueAvailable = totalInventoryValue != null;
 
@@ -81,7 +83,7 @@ export function BusinessHealth({
       <MetricCard
         icon="coins"
         tone="brand"
-        value={formatMoney(totalInventoryValue)}
+        value={formatMoney(totalInventoryValue, currency)}
         label="Total Inventory Value"
         hint={
           valueAvailable

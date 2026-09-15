@@ -317,6 +317,23 @@ def test_recommendation_context_wraps_product_context():
     assert wrapped.product.recommendation_action == rec.action == RecommendationAction.REORDER
 
 
+def test_currency_carried_into_all_ai_contexts():
+    _, _, _, ctx = run_pipeline(healthy())
+    brief = build_business_brief_context([ctx], generated_at=GENERATED_AT, currency="USD")
+    assert brief.currency == "USD"
+    wrapped = build_recommendation_context(ctx, generated_at=GENERATED_AT, currency="USD")
+    assert wrapped.currency == "USD"
+    insight = build_insight_context([ctx], generated_at=GENERATED_AT, currency="USD")
+    assert insight.currency == "USD"
+
+
+def test_currency_defaults_to_none_when_not_configured():
+    _, _, _, ctx = run_pipeline(healthy())
+    assert build_business_brief_context([ctx], generated_at=GENERATED_AT).currency is None
+    assert build_recommendation_context(ctx, generated_at=GENERATED_AT).currency is None
+    assert build_insight_context([ctx], generated_at=GENERATED_AT).currency is None
+
+
 # -------------------------------------------------------------- determinism
 
 def test_builders_deterministic_identical_generated_at():

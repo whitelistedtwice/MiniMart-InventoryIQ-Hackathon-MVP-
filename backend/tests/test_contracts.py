@@ -213,6 +213,9 @@ class TestAPIResponseContracts:
         settings = SettingsResponse()
         assert settings.sheets_connected is False
         assert settings.business_name is None
+        assert settings.business_type is None
+        assert settings.currency is None
+        assert settings.timezone is None
 
     def test_ai_unavailable_fallback(self):
         ai = AIExplanationResponse(

@@ -6,6 +6,7 @@ import type { AIExplanationResponse, DashboardResponse } from "@/app/types";
 import { AiBusinessBrief } from "@/components/dashboard/AiBusinessBrief";
 import { BusinessHealth } from "@/components/dashboard/BusinessHealth";
 import { TopPriorities } from "@/components/dashboard/TopPriorities";
+import { useCurrency } from "@/components/layout/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -26,6 +27,7 @@ import { API_ROUTES } from "@/lib/api/routes";
 
 export default function DashboardPage() {
   const dashboard = useApiGet<DashboardResponse>(API_ROUTES.dashboard);
+  const currency = useCurrency();
   const summary = dashboard.data?.summary ?? null;
 
   // A dashboard with zero products is treated as "no data yet" rather than
@@ -103,6 +105,7 @@ export default function DashboardPage() {
             itemsNeedingAttention={summary.items_needing_attention}
             healthyItems={summary.healthy_items}
             totalInventoryValue={summary.total_inventory_value ?? null}
+            currency={currency}
           />
           <TopPriorities priorities={summary.top_priorities ?? []} />
           <AiBusinessBrief

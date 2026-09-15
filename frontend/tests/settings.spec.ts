@@ -18,6 +18,8 @@ import type { SettingsResponse } from '../app/types';
 const SETTINGS_CONFIGURED: SettingsResponse = {
   business_name: "Chen's Mini-Mart",
   business_type: 'Mini-mart',
+  currency: 'USD',
+  timezone: 'Asia/Phnom_Penh',
   sheets_connected: true,
   last_sync_at: '2026-09-14T08:30:00',
 };
@@ -25,6 +27,8 @@ const SETTINGS_CONFIGURED: SettingsResponse = {
 const SETTINGS_UNCONFIGURED: SettingsResponse = {
   business_name: null,
   business_type: null,
+  currency: null,
+  timezone: null,
   sheets_connected: false,
   last_sync_at: null,
 };
@@ -55,6 +59,8 @@ test('settings renders the real backend contract and business profile', async ({
   const profile = page.getByRole('region', { name: 'Business profile' });
   await expect(profile).toContainText("Chen's Mini-Mart");
   await expect(profile).toContainText('Mini-mart');
+  await expect(profile).toContainText('USD');
+  await expect(profile).toContainText('Asia/Phnom_Penh');
 
   const connection = page.getByRole('region', { name: 'Google Sheets connection' });
   await expect(connection).toContainText('Configured');
@@ -85,6 +91,7 @@ test('missing optional values are handled safely without fabricated data', async
 
   const profile = page.getByRole('region', { name: 'Business profile' });
   await expect(profile).toContainText('—');
+  await expect(profile).toContainText('money values are shown without a currency');
   await expect(profile).not.toContainText('Coffee Corner');
   await expect(profile).not.toContainText('Mini-mart');
 

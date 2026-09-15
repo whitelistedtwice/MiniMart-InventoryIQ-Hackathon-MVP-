@@ -17,6 +17,7 @@ from app.ai_context.builder import (
 )
 from app.api.dependencies import get_as_of, get_raw_sheets
 from app.contracts.api import AIExplanationResponse
+from app.core.business import business_currency
 from app.gemini import client
 from app.services.analysis import analyze, find
 
@@ -30,7 +31,9 @@ def business_brief(
 ) -> AIExplanationResponse:
     """Gemini summary of the verified business condition."""
     contexts = [item.context() for item in analyze(raw, as_of)]
-    context = build_business_brief_context(contexts, generated_at=datetime.now())
+    context = build_business_brief_context(
+        contexts, generated_at=datetime.now(), currency=business_currency()
+    )
     return client.generate_business_brief(context)
 
 
@@ -42,7 +45,9 @@ def recommendation_explanation(
 ) -> AIExplanationResponse:
     """Gemini explanation of one product's deterministic recommendation."""
     item = find(analyze(raw, as_of), product_id)
-    context = build_recommendation_context(item.context(), generated_at=datetime.now())
+    context = build_recommendation_context(
+        item.context(), generated_at=datetime.now(), currency=business_currency()
+    )
     return client.explain_recommendation(context)
 
 
@@ -53,5 +58,7 @@ def analytics_insight(
 ) -> AIExplanationResponse:
     """Gemini explanation of verified analytics trends."""
     contexts = [item.context() for item in analyze(raw, as_of)]
-    context = build_insight_context(contexts, generated_at=datetime.now())
+    context = build_insight_context(
+        contexts, generated_at=datetime.now(), currency=business_currency()
+    )
     return client.generate_insight(context)

@@ -7,6 +7,7 @@ import type { AnalyticsResponse, ProductAnalytics } from "@/app/types";
 import { AnalyticsAiInsight } from "@/components/analytics/AnalyticsAiInsight";
 import { SalesTrendChart } from "@/components/analytics/SalesTrendChart";
 import { StockTrendChart } from "@/components/inventory/StockTrendChart";
+import { useCurrency } from "@/components/layout/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -147,6 +148,7 @@ function MarginValue({ value }: { value: number | null | undefined }) {
 
 export default function AnalyticsPage() {
   const analytics = useApiGet<AnalyticsResponse>(API_ROUTES.analytics);
+  const currency = useCurrency();
   const products = analytics.data?.products ?? [];
 
   const demandProducts = useMemo(
@@ -281,7 +283,7 @@ export default function AnalyticsPage() {
             "Days Left",
             "Inventory Value",
             "Incoming",
-            "Condition",
+            "Stock Condition",
           ]}
         >
           {namedProducts.map((product) => (
@@ -299,7 +301,7 @@ export default function AnalyticsPage() {
                 {formatDays(product.inventory.days_of_stock_remaining)}
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
-                {formatMoney(product.inventory.inventory_value)}
+                {formatMoney(product.inventory.inventory_value, currency)}
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
                 {formatStock(product.shipment.incoming_quantity)}
@@ -334,19 +336,19 @@ export default function AnalyticsPage() {
                 <ProductCell product={product} />
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
-                {formatMoney(product.financial.revenue)}
+                {formatMoney(product.financial.revenue, currency)}
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
-                {formatMoney(product.financial.estimated_cost)}
+                {formatMoney(product.financial.estimated_cost, currency)}
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
-                {formatMoney(product.financial.profit)}
+                {formatMoney(product.financial.profit, currency)}
               </td>
               <td className="px-5 py-3.5">
                 <MarginValue value={product.financial.profit_margin} />
               </td>
               <td className="px-5 py-3.5 tabular-nums text-ink-soft">
-                {formatMoney(product.financial.financial_exposure)}
+                {formatMoney(product.financial.financial_exposure, currency)}
               </td>
             </tr>
           ))}

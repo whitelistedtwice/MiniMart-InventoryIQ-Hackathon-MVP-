@@ -13,9 +13,31 @@ export function formatCount(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-/** Money value from the backend. null = unavailable, shown as "—". */
-export function formatMoney(value: number | null | undefined): string {
+/**
+ * Money value from the backend. null = unavailable, shown as "—".
+ *
+ * The business currency comes from backend configuration. When it is
+ * configured (ISO 4217 code) every money value is shown in that one
+ * currency; when it is missing — or the code is not recognized — the
+ * amount is shown plain, never with an invented currency.
+ */
+export function formatMoney(
+  value: number | null | undefined,
+  currency?: string | null,
+): string {
   if (value == null) return MISSING;
+  if (currency) {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      // Unknown currency code — fall back to the plain amount below.
+    }
+  }
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

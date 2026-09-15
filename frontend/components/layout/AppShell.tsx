@@ -6,22 +6,16 @@ import { TopBar } from "./TopBar";
 /**
  * Shared application shell: persistent sidebar + top bar + main content.
  *
- * `businessName` is a display value owned by the backend in later phases.
- * Until Settings provides it, a neutral label is shown — never a fabricated
- * business identity.
+ * The business name is fetched by the shared SettingsProvider (backend
+ * business profile) so every page shows the same identity without extra
+ * requests; the shell falls back to a neutral label when it is unset.
  */
-export function AppShell({
-  children,
-  businessName = "Your business",
-}: {
-  children: ReactNode;
-  businessName?: string;
-}) {
+export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
-      <Sidebar businessName={businessName} />
+      <Sidebar />
       <div className="flex min-h-screen flex-col lg:pl-60">
-        <TopBar businessName={businessName} />
+        <TopBar />
         <main className="flex-1">{children}</main>
       </div>
     </div>

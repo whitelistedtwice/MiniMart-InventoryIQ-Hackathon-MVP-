@@ -5,6 +5,7 @@ import type {
   AIInsightContext,
   AnalyticsResponse,
   ProductAnalytics,
+  SettingsResponse,
 } from '../app/types';
 
 /*
@@ -232,6 +233,19 @@ const AI_INSIGHT_OK: AIExplanationResponse = {
   ai_available: true,
 };
 
+/*
+  Shared settings response (Phase 15). No currency is configured, so money
+  values must render as plain amounts — never with an invented symbol.
+*/
+const SETTINGS: SettingsResponse = {
+  business_name: "Chen's Mini-Mart",
+  business_type: 'Mini-mart',
+  currency: null,
+  timezone: 'Asia/Phnom_Penh',
+  sheets_connected: false,
+  last_sync_at: null,
+};
+
 async function fulfillJson(route: Route, json: unknown) {
   await route.fulfill({
     headers: { 'Access-Control-Allow-Origin': '*' },
@@ -240,6 +254,9 @@ async function fulfillJson(route: Route, json: unknown) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/settings', (route) =>
+    fulfillJson(route, SETTINGS),
+  );
   await page.route('**/api/v1/analytics', (route) =>
     fulfillJson(route, ANALYTICS),
   );
@@ -310,7 +327,8 @@ test('analytics renders demand, inventory, and financial data from the backend',
     noodleFinancial.getByText('—', { exact: true }),
   ).toHaveCount(5);
 
-  // No invented scope: no stock turnover, no currency symbol (C-023).
+  // No invented scope: no stock turnover. With no currency configured
+  // (C-023), money stays plain — no symbol is ever invented.
   await expect(page.getByRole('main')).not.toContainText('Stock Turnover');
   await expect(page.getByRole('main')).not.toContainText('$');
 });

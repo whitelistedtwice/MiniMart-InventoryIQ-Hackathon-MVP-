@@ -147,6 +147,7 @@ export interface AIProductContext {
 
 export interface AIBusinessBriefContext {
   generated_at: string;
+  currency?: string | null;
   total_inventory_value?: number | null;
   items_needing_attention: number;
   healthy_items: number;
@@ -155,11 +156,13 @@ export interface AIBusinessBriefContext {
 
 export interface AIRecommendationContext {
   generated_at: string;
+  currency?: string | null;
   product: AIProductContext;
 }
 
 export interface AIInsightContext {
   generated_at: string;
+  currency?: string | null;
   focus_area: string;
   verified_trends: string[];
   product_highlights: AIProductContext[];
@@ -208,6 +211,8 @@ export interface AnalyticsResponse {
 export interface SettingsResponse {
   business_name?: string | null;
   business_type?: string | null;
+  currency?: string | null;
+  timezone?: string | null;
   sheets_connected: boolean;
   last_sync_at?: string | null;
 }

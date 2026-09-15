@@ -70,10 +70,16 @@ class AnalyticsResponse(BaseModel):
 
 
 class SettingsResponse(BaseModel):
-    """Settings page state."""
+    """Settings page state.
+
+    ``sheets_connected`` is environment-presence only (the credentials are
+    configured); it is not a live connectivity probe (C-002).
+    """
 
     business_name: Optional[str] = None
     business_type: Optional[str] = None
+    currency: Optional[str] = None
+    timezone: Optional[str] = None
     sheets_connected: bool = False
     last_sync_at: Optional[datetime] = None
 

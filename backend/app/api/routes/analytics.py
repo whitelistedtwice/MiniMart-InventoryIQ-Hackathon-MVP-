@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 from app.ai_context.builder import build_insight_context
 from app.api.dependencies import get_as_of, get_raw_sheets
 from app.contracts.api import AnalyticsResponse
+from app.core.business import business_currency
 from app.services.analysis import analyze
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -25,5 +26,7 @@ def get_analytics(
     return AnalyticsResponse(
         generated_at=now,
         products=[item.analytics for item in analyses],
-        ai_insight_context=build_insight_context(contexts, generated_at=now),
+        ai_insight_context=build_insight_context(
+            contexts, generated_at=now, currency=business_currency()
+        ),
     )

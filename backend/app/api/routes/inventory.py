@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 from app.ai_context.builder import build_recommendation_context
 from app.api.dependencies import get_as_of, get_raw_sheets
 from app.contracts.api import ProductDetailResponse, ProductListItem
+from app.core.business import business_currency
 from app.services.analysis import analyze, find
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -39,6 +40,8 @@ def get_product(
         product_id=item.analytics.product_id,
         analytics=item.analytics,
         recommendation=item.recommendation,
-        ai_context=build_recommendation_context(item.context(), generated_at=datetime.now()),
+        ai_context=build_recommendation_context(
+            item.context(), generated_at=datetime.now(), currency=business_currency()
+        ),
         historical_inventory=item.analytics.inventory_history,
     )

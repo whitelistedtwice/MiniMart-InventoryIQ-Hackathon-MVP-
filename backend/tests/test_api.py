@@ -80,6 +80,27 @@ def test_settings_connection_state(monkeypatch):
     assert client.get("/api/v1/settings").json()["sheets_connected"] is True
 
 
+def test_settings_business_profile_from_env(monkeypatch):
+    monkeypatch.setenv("BUSINESS_NAME", "Chen's Mini-Mart")
+    monkeypatch.setenv("BUSINESS_TYPE", "Mini-mart")
+    monkeypatch.setenv("BUSINESS_CURRENCY", "USD")
+    body = client.get("/api/v1/settings").json()
+    assert body["business_name"] == "Chen's Mini-Mart"
+    assert body["business_type"] == "Mini-mart"
+    assert body["currency"] == "USD"
+    assert body["timezone"] == "Asia/Phnom_Penh"
+
+
+def test_settings_business_profile_unset_is_null(monkeypatch):
+    for key in ("BUSINESS_NAME", "BUSINESS_TYPE", "BUSINESS_CURRENCY"):
+        monkeypatch.delenv(key, raising=False)
+    body = client.get("/api/v1/settings").json()
+    assert body["business_name"] is None
+    assert body["business_type"] is None
+    assert body["currency"] is None
+    assert body["timezone"] == "Asia/Phnom_Penh"
+
+
 # -------------------------------------------------------------- dashboard
 
 def test_dashboard_success():
@@ -151,6 +172,46 @@ def test_analytics_success():
     assert body["generated_at"] == body["ai_insight_context"]["generated_at"]
     trends = body["ai_insight_context"]["verified_trends"]
     assert any("increasing" in t for t in trends)
+
+
+def test_money_fields_are_json_numbers_not_strings():
+    """API money is always a JSON number (Phase 15 contract consistency)."""
+    use(merge(healthy(), immediate_stockout(), excess_slow_moving()))
+    analytics = client.get("/api/v1/analytics").json()
+    assert analytics["products"]
+    for product in analytics["products"]:
+        for field in ("revenue", "estimated_cost", "profit", "financial_exposure"):
+            value = product["financial"][field]
+            assert value is None or isinstance(value, float)
+        for field in ("inventory_value", "excess_value"):
+            value = product["inventory"][field]
+            assert value is None or isinstance(value, float)
+
+    product_id = analytics["products"][0]["product_id"]
+    detail = client.get(f"/api/v1/inventory/{product_id}").json()
+    for field in ("revenue", "estimated_cost", "profit", "financial_exposure"):
+        value = detail["analytics"]["financial"][field]
+        assert value is None or isinstance(value, float)
+
+    dashboard = client.get("/api/v1/dashboard").json()
+    assert isinstance(dashboard["summary"]["total_inventory_value"], float)
+
+
+def test_ai_contexts_carry_configured_currency(monkeypatch):
+    monkeypatch.setenv("BUSINESS_CURRENCY", "KHR")
+    use(merge(healthy(), immediate_stockout()))
+    dashboard = client.get("/api/v1/dashboard").json()
+    assert dashboard["ai_brief_context"]["currency"] == "KHR"
+    detail = client.get("/api/v1/inventory/stockout-1").json()
+    assert detail["ai_context"]["currency"] == "KHR"
+    analytics = client.get("/api/v1/analytics").json()
+    assert analytics["ai_insight_context"]["currency"] == "KHR"
+
+
+def test_ai_contexts_currency_none_when_unset(monkeypatch):
+    monkeypatch.delenv("BUSINESS_CURRENCY", raising=False)
+    use(merge(healthy(), immediate_stockout()))
+    assert client.get("/api/v1/dashboard").json()["ai_brief_context"]["currency"] is None
 
 
 # -------------------------------------------------------------- AI routes

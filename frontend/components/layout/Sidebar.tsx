@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 
 import { Icon } from "@/components/ui/icons";
 import { NAV_ITEMS } from "./nav-items";
+import { useBusinessName } from "./SettingsProvider";
 
-export function Sidebar({ businessName }: { businessName: string }) {
+export function Sidebar() {
   const pathname = usePathname();
+  const businessName = useBusinessName();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-surface lg:flex">

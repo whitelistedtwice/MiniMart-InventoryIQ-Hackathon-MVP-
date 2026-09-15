@@ -55,7 +55,7 @@ export function ProductAiInsight({ productId }: { productId: string }) {
               AI Product Insight
             </h2>
             <p className="text-xs text-muted">
-              Gemini explains the verified recommendation.
+              AI explains the verified recommendation.
             </p>
           </div>
         </div>

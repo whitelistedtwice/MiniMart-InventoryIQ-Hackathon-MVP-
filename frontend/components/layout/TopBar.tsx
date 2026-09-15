@@ -1,13 +1,18 @@
+"use client";
+
 import { Icon } from "@/components/ui/icons";
 import { GlobalSearch } from "./GlobalSearch";
 import { MobileNav } from "./MobileNav";
+import { useBusinessName } from "./SettingsProvider";
 
 /**
  * Shared top bar. The search field submits into the Inventory page's
  * authoritative search; the bell is decorative (no notification system
  * exists) and the identity area is not an account control.
  */
-export function TopBar({ businessName }: { businessName: string }) {
+export function TopBar() {
+  const businessName = useBusinessName();
+
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface">
       <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">

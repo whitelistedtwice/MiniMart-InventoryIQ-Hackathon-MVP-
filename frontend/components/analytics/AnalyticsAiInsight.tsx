@@ -50,7 +50,7 @@ export function AnalyticsAiInsight() {
           <div>
             <h2 className="text-base font-semibold text-ink">AI Insight</h2>
             <p className="text-xs text-muted">
-              Gemini explains your verified business trends.
+              AI explains your verified business trends.
             </p>
           </div>
         </div>

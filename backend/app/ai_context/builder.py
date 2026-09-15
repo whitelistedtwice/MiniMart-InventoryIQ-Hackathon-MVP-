@@ -9,6 +9,7 @@ AI contract requires it (inventory_value, financial_exposure).
 """
 
 from datetime import datetime
+from typing import Optional
 
 from app.contracts.ai_context import (
     AIBusinessBriefContext,
@@ -61,11 +62,17 @@ def build_business_brief_context(
     product_contexts: list[AIProductContext],
     *,
     generated_at: datetime,
+    currency: Optional[str] = None,
 ) -> AIBusinessBriefContext:
-    """Build verified context for the dashboard AI Business Brief."""
+    """Build verified context for the dashboard AI Business Brief.
+
+    ``currency`` comes from business configuration (not from Gemini), so the
+    explanation can only use a currency the business actually configured.
+    """
     values = [c.inventory_value for c in product_contexts if c.inventory_value is not None]
     return AIBusinessBriefContext(
         generated_at=generated_at,
+        currency=currency,
         total_inventory_value=sum(values) if values else None,
         items_needing_attention=sum(1 for c in product_contexts if c.is_actionable()),
         healthy_items=sum(1 for c in product_contexts if not c.is_actionable()),
@@ -80,9 +87,12 @@ def build_recommendation_context(
     product_context: AIProductContext,
     *,
     generated_at: datetime,
+    currency: Optional[str] = None,
 ) -> AIRecommendationContext:
     """Build verified context for the product-detail AI explanation."""
-    return AIRecommendationContext(generated_at=generated_at, product=product_context)
+    return AIRecommendationContext(
+        generated_at=generated_at, currency=currency, product=product_context
+    )
 
 
 def build_insight_context(
@@ -90,6 +100,7 @@ def build_insight_context(
     *,
     focus_area: str = "demand",
     generated_at: datetime,
+    currency: Optional[str] = None,
 ) -> AIInsightContext:
     """Build verified context for the analytics-page AI insight."""
     highlights = sorted(
@@ -107,6 +118,7 @@ def build_insight_context(
 
     return AIInsightContext(
         generated_at=generated_at,
+        currency=currency,
         focus_area=focus_area,
         verified_trends=trends,
         product_highlights=highlights,

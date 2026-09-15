@@ -1,6 +1,5 @@
 "use client";
 
-import type { SettingsResponse } from "@/app/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -9,20 +8,19 @@ import { Icon } from "@/components/ui/icons";
 import { LoadingState, Skeleton } from "@/components/ui/LoadingState";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useApiGet } from "@/lib/api/hooks";
-import { API_ROUTES } from "@/lib/api/routes";
+import { useSettings } from "@/components/layout/SettingsProvider";
 import { formatDate } from "@/lib/format";
 
 /*
-  Settings (Phase 14).
+  Settings (Phase 14, profile Phase 15).
 
-  A lightweight, read-only presentation of `GET /api/v1/settings`:
-  business profile and Google Sheets connection state. The backend contract
-  currently exposes only configuration-presence (`sheets_connected`) and does
-  not support editing or live connectivity probing, so the UI is honest about
-  that — it says "Configured" / "Not configured", never "Connected and working".
+  A lightweight, read-only presentation of `GET /api/v1/settings`: the
+  configured business profile and the Google Sheets connection state.
 
-  No persistence, no credentials, no account management, no sync toggles.
+  The business profile is environment configuration (single business, no
+  database), so the page is intentionally read-only. `sheets_connected` is
+  configuration presence only — not a live probe — so the UI says
+  "Configured" / "Not configured", never "Connected and working" (C-002).
 */
 
 const MISSING = "—";
@@ -31,7 +29,7 @@ function SettingsSkeleton() {
   return (
     <LoadingState label="Loading settings">
       <div className="space-y-6">
-        <Skeleton className="h-44 w-full" />
+        <Skeleton className="h-52 w-full" />
         <Skeleton className="h-44 w-full" />
       </div>
     </LoadingState>
@@ -53,32 +51,47 @@ function InfoRow({
   );
 }
 
-function BusinessProfileCard({ data }: { data: SettingsResponse }) {
+function BusinessProfileCard({
+  businessName,
+  businessType,
+  currency,
+  timezone,
+}: {
+  businessName: string | null | undefined;
+  businessType: string | null | undefined;
+  currency: string | null | undefined;
+  timezone: string | null | undefined;
+}) {
   return (
     <section aria-label="Business profile">
       <Card>
         <h2 className="text-lg font-semibold text-ink">Business Profile</h2>
         <p className="mt-0.5 text-sm text-muted">
-          Basic information about your business.
+          Basic information about your business. These values are set by your
+          InventoryIQ configuration.
         </p>
         <dl className="mt-5 space-y-4">
+          <InfoRow label="Business Name" value={businessName ?? MISSING} />
+          <InfoRow label="Business Type" value={businessType ?? MISSING} />
           <InfoRow
-            label="Business Name"
-            value={data.business_name ?? MISSING}
+            label="Currency"
+            value={
+              currency
+                ? currency
+                : `${MISSING} (money values are shown without a currency)`
+            }
           />
-          <InfoRow
-            label="Business Type"
-            value={data.business_type ?? MISSING}
-          />
+          <InfoRow label="Timezone" value={timezone ?? MISSING} />
         </dl>
       </Card>
     </section>
   );
 }
 
-function ConnectionCard({ data }: { data: SettingsResponse }) {
-  const configured = data.sheets_connected;
-
+function ConnectionCard({ connected, lastSyncAt }: {
+  connected: boolean;
+  lastSyncAt: string | null | undefined;
+}) {
   return (
     <section aria-label="Google Sheets connection">
       <Card>
@@ -91,11 +104,11 @@ function ConnectionCard({ data }: { data: SettingsResponse }) {
 
         <div className="mt-5 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Badge variant={configured ? "success" : "neutral"}>
-              {configured ? "Configured" : "Not configured"}
+            <Badge variant={connected ? "success" : "neutral"}>
+              {connected ? "Configured" : "Not configured"}
             </Badge>
             <span className="text-sm text-muted">
-              {configured
+              {connected
                 ? "Google Sheets credentials are configured."
                 : "Google Sheets credentials are not configured yet."}
             </span>
@@ -103,7 +116,7 @@ function ConnectionCard({ data }: { data: SettingsResponse }) {
 
           <InfoRow
             label="Last sync"
-            value={data.last_sync_at ? formatDate(data.last_sync_at) : MISSING}
+            value={lastSyncAt ? formatDate(lastSyncAt) : MISSING}
           />
         </div>
       </Card>
@@ -112,9 +125,9 @@ function ConnectionCard({ data }: { data: SettingsResponse }) {
 }
 
 export default function SettingsPage() {
-  const settings = useApiGet<SettingsResponse>(API_ROUTES.settings);
+  const { settings, loading, error, reload } = useSettings();
 
-  if (settings.loading) {
+  if (loading) {
     return (
       <PageContainer>
         <PageHeader
@@ -126,7 +139,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (settings.error) {
+  if (error) {
     return (
       <PageContainer>
         <PageHeader
@@ -136,18 +149,17 @@ export default function SettingsPage() {
         <ErrorState
           title="We couldn't load your settings"
           description={
-            settings.error.kind === "network"
+            error.kind === "network"
               ? "The InventoryIQ server didn't respond. Check that it is running, then try again."
               : "The server couldn't load your settings right now. Please try again."
           }
-          onRetry={settings.reload}
+          onRetry={reload}
         />
       </PageContainer>
     );
   }
 
-  const data = settings.data;
-  if (!data) {
+  if (!settings) {
     return (
       <PageContainer>
         <PageHeader
@@ -157,7 +169,7 @@ export default function SettingsPage() {
         <ErrorState
           title="We couldn't load your settings"
           description="The server returned an unexpected response. Please try again."
-          onRetry={settings.reload}
+          onRetry={reload}
         />
       </PageContainer>
     );
@@ -172,8 +184,8 @@ export default function SettingsPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={settings.reload}
-            disabled={settings.loading}
+            onClick={reload}
+            disabled={loading}
           >
             <Icon name="refresh" width={16} height={16} />
             Refresh
@@ -182,8 +194,16 @@ export default function SettingsPage() {
       />
 
       <div className="space-y-6">
-        <BusinessProfileCard data={data} />
-        <ConnectionCard data={data} />
+        <BusinessProfileCard
+          businessName={settings.business_name}
+          businessType={settings.business_type}
+          currency={settings.currency}
+          timezone={settings.timezone}
+        />
+        <ConnectionCard
+          connected={settings.sheets_connected}
+          lastSyncAt={settings.last_sync_at}
+        />
       </div>
     </PageContainer>
   );

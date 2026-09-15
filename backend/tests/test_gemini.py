@@ -311,6 +311,40 @@ def test_khmer_name_sent_verbatim(monkeypatch):
     assert "កូកា" in captured["p"]
 
 
+def test_currency_sent_in_context_and_guarded_in_instruction(monkeypatch):
+    captured = {}
+
+    def capture(prompt):
+        captured["p"] = prompt
+        return dict(VALID)
+
+    monkeypatch.setattr(client, "_generate", capture)
+    _, _, _, ctx = _build(healthy())
+    client.explain_recommendation(
+        build_recommendation_context(ctx, generated_at=GENERATED_AT, currency="KHR")
+    )
+    assert '"currency":"KHR"' in captured["p"]
+    # The instruction forbids naming/symbolizing any other currency and
+    # forbids adding one when the context does not state it.
+    assert "currency" in client._SYSTEM_INSTRUCTION
+    assert "Never name or symbolize any currency other than that value" in (
+        client._SYSTEM_INSTRUCTION
+    )
+
+
+def test_currency_absent_is_explicit_null_in_prompt(monkeypatch):
+    captured = {}
+
+    def capture(prompt):
+        captured["p"] = prompt
+        return dict(VALID)
+
+    monkeypatch.setattr(client, "_generate", capture)
+    _, ctx = _rec_context(healthy())
+    client.explain_recommendation(ctx)
+    assert '"currency":null' in captured["p"]
+
+
 # --------------------------------------------------------- integration
 
 def test_full_pipeline_mocked_gemini(monkeypatch):

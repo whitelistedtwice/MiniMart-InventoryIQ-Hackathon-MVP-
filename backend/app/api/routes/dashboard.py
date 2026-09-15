@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 from app.ai_context.builder import build_business_brief_context
 from app.api.dependencies import get_as_of, get_raw_sheets
 from app.contracts.api import DashboardResponse, DashboardSummary
+from app.core.business import business_currency
 from app.services.analysis import analyze
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -24,7 +25,9 @@ def get_dashboard(
     now = datetime.now()
     analyses = analyze(raw, as_of)
     contexts = [item.context() for item in analyses]
-    brief = build_business_brief_context(contexts, generated_at=now)
+    brief = build_business_brief_context(
+        contexts, generated_at=now, currency=business_currency()
+    )
     actionable = sorted(
         (item for item in analyses if item.recommendation.is_actionable()),
         key=lambda item: (item.recommendation.priority.value, item.analytics.product_id),

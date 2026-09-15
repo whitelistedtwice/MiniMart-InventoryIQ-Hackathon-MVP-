@@ -4,6 +4,7 @@ import type {
   AIExplanationResponse,
   ProductDetailResponse,
   ProductListItem,
+  SettingsResponse,
 } from '../app/types';
 
 /*
@@ -458,6 +459,20 @@ const AI_MAMA_OK: AIExplanationResponse = {
   ai_available: true,
 };
 
+/*
+  Shared settings response (Phase 15). The app shell fetches settings once
+  per load for the business profile; no currency is configured here so money
+  rendering stays plain in these tests.
+*/
+const SETTINGS: SettingsResponse = {
+  business_name: "Chen's Mini-Mart",
+  business_type: 'Mini-mart',
+  currency: null,
+  timezone: 'Asia/Phnom_Penh',
+  sheets_connected: false,
+  last_sync_at: null,
+};
+
 /** Fulfill a cross-origin request; the CORS header mirrors the backend. */
 async function fulfillJson(route: Route, json: unknown) {
   await route.fulfill({
@@ -472,8 +487,11 @@ async function fulfillInventory(route: Route) {
 }
 
 test.beforeEach(async ({ page }) => {
-  // Intercept the cross-origin backend call; the CORS header mimics the
+  // Intercept the cross-origin backend calls; the CORS header mimics the
   // backend's real CORS behaviour for the localhost frontend origin.
+  await page.route('**/api/v1/settings', (route) =>
+    fulfillJson(route, SETTINGS),
+  );
   await page.route('**/api/v1/inventory', fulfillInventory);
 });
 

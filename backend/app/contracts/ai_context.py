@@ -70,6 +70,13 @@ class AIBusinessBriefContext(BaseModel):
     """Verified context for the dashboard AI Business Brief."""
 
     generated_at: datetime
+    currency: Optional[str] = Field(
+        None,
+        description=(
+            "Configured business currency (ISO 4217). None means the currency "
+            "is not configured: the explanation must not invent one."
+        ),
+    )
     total_inventory_value: Optional[float] = None
     items_needing_attention: int = 0
     healthy_items: int = 0
@@ -83,6 +90,13 @@ class AIRecommendationContext(BaseModel):
     """Verified context for the product-detail AI explanation."""
 
     generated_at: datetime
+    currency: Optional[str] = Field(
+        None,
+        description=(
+            "Configured business currency (ISO 4217). None means the currency "
+            "is not configured: the explanation must not invent one."
+        ),
+    )
     product: AIProductContext
 
 
@@ -90,6 +104,13 @@ class AIInsightContext(BaseModel):
     """Verified context for the analytics-page AI insight card."""
 
     generated_at: datetime
+    currency: Optional[str] = Field(
+        None,
+        description=(
+            "Configured business currency (ISO 4217). None means the currency "
+            "is not configured: the explanation must not invent one."
+        ),
+    )
     focus_area: str = Field(
         default="demand",
         description="Which analytics area the insight addresses",

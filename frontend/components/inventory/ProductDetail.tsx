@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ProductDetailResponse, RecommendationResult } from "@/app/types";
 import { ProductAiInsight } from "@/components/inventory/ProductAiInsight";
 import { StockTrendChart } from "@/components/inventory/StockTrendChart";
+import { useCurrency } from "@/components/layout/SettingsProvider";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -120,6 +121,7 @@ function DetailSkeleton() {
 
 export function ProductDetail({ productId }: { productId: string }) {
   const detail = useApiGet<ProductDetailResponse>(API_ROUTES.product(productId));
+  const currency = useCurrency();
   const backLink = (
     <Link
       href="/inventory"
@@ -352,7 +354,7 @@ export function ProductDetail({ productId }: { productId: string }) {
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Inventory value</dt>
                   <dd className="tabular-nums font-medium text-ink">
-                    {formatMoney(inventory.inventory_value)}
+                    {formatMoney(inventory.inventory_value, currency)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-3">
