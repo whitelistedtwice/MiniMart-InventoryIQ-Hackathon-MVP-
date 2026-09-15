@@ -36,6 +36,7 @@ class DashboardSummary(BaseModel):
 
     items_needing_attention: int = 0
     healthy_items: int = 0
+    unavailable_items: int = 0
     total_inventory_value: Optional[float] = None
     top_priorities: list[ProductListItem] = Field(default_factory=list)
 
@@ -72,8 +73,10 @@ class AnalyticsResponse(BaseModel):
 class SettingsResponse(BaseModel):
     """Settings page state.
 
-    ``sheets_connected`` is environment-presence only (the credentials are
-    configured); it is not a live connectivity probe (C-002).
+    ``sheets_connection_state`` reports the result of a cached live probe:
+    ``not_configured``, ``configured`` (credentials present but probe timed
+    out/pending), ``connected``, or ``error``. ``sheets_connected`` is kept
+    for compatibility and is ``True`` only when state is ``connected``.
     """
 
     business_name: Optional[str] = None
@@ -81,6 +84,9 @@ class SettingsResponse(BaseModel):
     currency: Optional[str] = None
     timezone: Optional[str] = None
     sheets_connected: bool = False
+    sheets_connection_state: str = "not_configured"
+    sheets_connection_error: Optional[str] = None
+    sheets_last_checked_at: Optional[datetime] = None
     last_sync_at: Optional[datetime] = None
 
 

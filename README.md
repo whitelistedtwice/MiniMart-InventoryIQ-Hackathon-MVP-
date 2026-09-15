@@ -8,22 +8,17 @@ decisions — helping owners avoid stockouts and excess stock.
 
 - **Frontend:** React / Next.js + Tailwind CSS
 - **Backend:** Python + FastAPI
-- **Data processing:** Pandas
+- **Data source:** Google Sheets (read-only)
+- **AI explanations:** Google Gemini (optional)
 
-## Running the frontend
+## Running locally
 
-```
-cd frontend
-npm install
-npm run dev
-```
+### Backend
 
-Open http://localhost:3000
-
-## Running the backend
-
-```
+```bash
 cd backend
+cp .env.example .env
+# Edit .env with your Google Sheets and Gemini credentials
 py -V:3.14 -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\uvicorn main:app --reload --port 8000
@@ -31,14 +26,24 @@ py -V:3.14 -m venv .venv
 
 Health check: http://localhost:8000/health
 
+### Frontend
+
+```bash
+cd frontend
+cp .env.example .env.local
+# Edit .env.local to point at the backend (default: http://localhost:8000)
+npm install
+npm run dev
+```
+
+Open http://localhost:3000
+
 ## Architecture
 
 See `docs/ARCHITECTURE.md` for the project structure, data flow, and the
 contracts that the frontend and backend share.
 
-## Development plan
+## Deployment
 
-Development proceeds in phases (see `InventoryIQ_TEAM_PROMPT_PLAN_FINAL.md`
-and `InventoryIQ_SOURCE_OF_TRUTH.md`). This repository is currently at
-**Phase 1 — architecture and contracts**. Product features will be built
-in later phases.
+See `docs/DEPLOYMENT.md` for Vercel + Render deployment instructions,
+environment variables, Google Sheets service-account setup, and demo mode.

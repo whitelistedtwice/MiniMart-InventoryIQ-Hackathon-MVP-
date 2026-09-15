@@ -270,13 +270,14 @@ def test_business_brief_total_none_when_no_values():
     assert brief.total_inventory_value is None
 
 
-def test_business_brief_unavailable_items_are_healthy_side():
+def test_business_brief_unavailable_items_are_counted_separately():
     raw = ALL_SCENARIOS["healthy"]()
     raw["Inventory"] = []  # UNAVAILABLE
     contexts = _contexts(lambda: raw)
     brief = build_business_brief_context(contexts, generated_at=GENERATED_AT)
     assert brief.items_needing_attention == 0
-    assert brief.healthy_items == 1
+    assert brief.healthy_items == 0
+    assert brief.unavailable_items == 1
     assert brief.top_priorities == []
 
 

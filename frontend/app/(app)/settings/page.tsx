@@ -12,15 +12,15 @@ import { useSettings } from "@/components/layout/SettingsProvider";
 import { formatDate } from "@/lib/format";
 
 /*
-  Settings (Phase 14, profile Phase 15).
+  Settings (Phase 14, profile Phase 15, probe Phase 16).
 
   A lightweight, read-only presentation of `GET /api/v1/settings`: the
   configured business profile and the Google Sheets connection state.
 
   The business profile is environment configuration (single business, no
-  database), so the page is intentionally read-only. `sheets_connected` is
-  configuration presence only — not a live probe — so the UI says
-  "Configured" / "Not configured", never "Connected and working" (C-002).
+  database), so the page is intentionally read-only. `sheets_connection_state`
+  is the result of a cached live probe, so the UI shows honest states:
+  Not configured / Configured / Connected / Connection error (C-002).
 */
 
 const MISSING = "—";
@@ -88,10 +88,35 @@ function BusinessProfileCard({
   );
 }
 
-function ConnectionCard({ connected, lastSyncAt }: {
-  connected: boolean;
+function ConnectionCard({
+  state,
+  error,
+  lastSyncAt,
+}: {
+  state: string;
+  error?: string | null;
   lastSyncAt: string | null | undefined;
 }) {
+  const labels: Record<string, string> = {
+    not_configured: "Not configured",
+    configured: "Configured",
+    connected: "Connected",
+    error: "Connection error",
+  };
+  const variants: Record<string, "neutral" | "success" | "danger"> = {
+    not_configured: "neutral",
+    configured: "neutral",
+    connected: "success",
+    error: "danger",
+  };
+  const hints: Record<string, string> = {
+    not_configured: "Google Sheets credentials are not configured yet.",
+    configured:
+      "Credentials are configured; live connection not yet verified.",
+    connected: "Google Sheets is reachable and the required tabs exist.",
+    error: error ?? "InventoryIQ could not reach Google Sheets.",
+  };
+
   return (
     <section aria-label="Google Sheets connection">
       <Card>
@@ -104,15 +129,19 @@ function ConnectionCard({ connected, lastSyncAt }: {
 
         <div className="mt-5 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Badge variant={connected ? "success" : "neutral"}>
-              {connected ? "Configured" : "Not configured"}
+            <Badge variant={variants[state] ?? "neutral"}>
+              {labels[state] ?? state}
             </Badge>
             <span className="text-sm text-muted">
-              {connected
-                ? "Google Sheets credentials are configured."
-                : "Google Sheets credentials are not configured yet."}
+              {hints[state] ?? ""}
             </span>
           </div>
+
+          {state === "error" && error && (
+            <p className="rounded-lg bg-danger-soft p-3 text-sm text-danger">
+              {error}
+            </p>
+          )}
 
           <InfoRow
             label="Last sync"
@@ -201,7 +230,8 @@ export default function SettingsPage() {
           timezone={settings.timezone}
         />
         <ConnectionCard
-          connected={settings.sheets_connected}
+          state={settings.sheets_connection_state}
+          error={settings.sheets_connection_error}
           lastSyncAt={settings.last_sync_at}
         />
       </div>

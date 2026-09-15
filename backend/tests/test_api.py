@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_as_of, get_raw_sheets
 from app.core.errors import DataAccessError, GeminiError
+from app.data_access import sheets as sheets_module
 from app.gemini import client as gclient
 from main import app
 from tests.fixtures import (
@@ -33,6 +34,7 @@ AS_OF = date(2026, 9, 14)
 def _clear_overrides():
     yield
     app.dependency_overrides.clear()
+    sheets_module._connection_cache.clear()
 
 
 def use(raw, as_of=AS_OF):
@@ -74,10 +76,52 @@ def test_openapi_uses_response_models():
 def test_settings_connection_state(monkeypatch):
     monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
     monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
-    assert client.get("/api/v1/settings").json()["sheets_connected"] is False
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    body = client.get("/api/v1/settings").json()
+    assert body["sheets_connected"] is False
+    assert body["sheets_connection_state"] == "not_configured"
+
+
+def test_dashboard_demo_mode_without_credentials(monkeypatch):
+    """Demo mode must serve the demo dataset without any Google credentials."""
+    monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    response = client.get("/api/v1/dashboard")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["items_needing_attention"] == 8
+    assert body["summary"]["healthy_items"] == 3
+    assert body["summary"]["unavailable_items"] == 1
+    assert body["summary"]["total_inventory_value"] == 1180.05
+
+
+def test_settings_demo_mode_reports_not_configured(monkeypatch):
+    """Demo mode does not claim a live Google Sheets connection."""
+    monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    body = client.get("/api/v1/settings").json()
+    assert body["sheets_connection_state"] == "not_configured"
+    assert body["last_sync_at"] is None
+
+    # Credentials present but probe fails -> error state, not connected
     monkeypatch.setenv("GOOGLE_SHEET_ID", "x")
     monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "y")
-    assert client.get("/api/v1/settings").json()["sheets_connected"] is True
+    body = client.get("/api/v1/settings?force=1").json()
+    assert body["sheets_connected"] is False
+    assert body["sheets_connection_state"] == "error"
+    assert body["sheets_connection_error"]
+
+    # Successful probe -> connected
+    monkeypatch.setattr(
+        sheets_module, "_probe_connection", lambda **kwargs: (True, None)
+    )
+    body = client.get("/api/v1/settings?force=1").json()
+    assert body["sheets_connected"] is True
+    assert body["sheets_connection_state"] == "connected"
 
 
 def test_settings_business_profile_from_env(monkeypatch):

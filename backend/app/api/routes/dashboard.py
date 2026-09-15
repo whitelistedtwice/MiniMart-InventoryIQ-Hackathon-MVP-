@@ -37,6 +37,7 @@ def get_dashboard(
         summary=DashboardSummary(
             items_needing_attention=brief.items_needing_attention,
             healthy_items=brief.healthy_items,
+            unavailable_items=brief.unavailable_items,
             total_inventory_value=brief.total_inventory_value,
             top_priorities=[item.list_item() for item in actionable[:TOP_PRIORITIES_LIMIT]],
         ),

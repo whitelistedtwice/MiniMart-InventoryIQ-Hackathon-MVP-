@@ -32,6 +32,9 @@ const SETTINGS: SettingsResponse = {
   currency: 'USD',
   timezone: 'Asia/Phnom_Penh',
   sheets_connected: true,
+  sheets_connection_state: 'connected',
+  sheets_connection_error: null,
+  sheets_last_checked_at: null,
   last_sync_at: '2026-09-14T08:30:00',
 };
 
@@ -78,7 +81,8 @@ const DASHBOARD: DashboardResponse = {
   generated_at: '2026-09-14T00:00:00',
   summary: {
     items_needing_attention: 8,
-    healthy_items: 4,
+    healthy_items: 3,
+    unavailable_items: 1,
     total_inventory_value: 1180.05,
     // Real backend order: (priority, product_id) for actionable products.
     top_priorities: [
@@ -122,7 +126,8 @@ const DASHBOARD: DashboardResponse = {
     currency: 'USD',
     total_inventory_value: 1180.05,
     items_needing_attention: 8,
-    healthy_items: 4,
+    healthy_items: 3,
+    unavailable_items: 1,
     top_priorities: [],
   },
 };

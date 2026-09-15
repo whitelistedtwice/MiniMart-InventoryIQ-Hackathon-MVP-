@@ -19,7 +19,7 @@ from app.contracts.ai_context import (
 )
 from app.contracts.analytics import DemandTrend, ProductAnalytics
 from app.contracts.data import Product
-from app.contracts.recommendation import RecommendationResult
+from app.contracts.recommendation import RecommendationAction, RecommendationResult
 
 
 def build_product_context(
@@ -75,7 +75,16 @@ def build_business_brief_context(
         currency=currency,
         total_inventory_value=sum(values) if values else None,
         items_needing_attention=sum(1 for c in product_contexts if c.is_actionable()),
-        healthy_items=sum(1 for c in product_contexts if not c.is_actionable()),
+        healthy_items=sum(
+            1
+            for c in product_contexts
+            if c.recommendation_action == RecommendationAction.NO_ACTION
+        ),
+        unavailable_items=sum(
+            1
+            for c in product_contexts
+            if c.recommendation_action == RecommendationAction.UNAVAILABLE
+        ),
         top_priorities=sorted(
             (c for c in product_contexts if c.is_actionable()),
             key=lambda c: (c.priority, c.product_id),

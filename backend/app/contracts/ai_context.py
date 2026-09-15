@@ -80,6 +80,7 @@ class AIBusinessBriefContext(BaseModel):
     total_inventory_value: Optional[float] = None
     items_needing_attention: int = 0
     healthy_items: int = 0
+    unavailable_items: int = 0
     top_priorities: list[AIProductContext] = Field(
         default_factory=list,
         description="Products with the highest-priority recommendations",

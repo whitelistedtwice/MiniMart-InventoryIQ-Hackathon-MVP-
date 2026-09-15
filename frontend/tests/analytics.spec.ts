@@ -243,6 +243,9 @@ const SETTINGS: SettingsResponse = {
   currency: null,
   timezone: 'Asia/Phnom_Penh',
   sheets_connected: false,
+  sheets_connection_state: 'not_configured',
+  sheets_connection_error: null,
+  sheets_last_checked_at: null,
   last_sync_at: null,
 };
 

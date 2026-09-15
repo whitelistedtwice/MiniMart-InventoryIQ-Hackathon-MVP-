@@ -151,6 +151,7 @@ export interface AIBusinessBriefContext {
   total_inventory_value?: number | null;
   items_needing_attention: number;
   healthy_items: number;
+  unavailable_items: number;
   top_priorities: AIProductContext[];
 }
 
@@ -184,6 +185,7 @@ export interface ProductListItem {
 export interface DashboardSummary {
   items_needing_attention: number;
   healthy_items: number;
+  unavailable_items: number;
   total_inventory_value?: number | null;
   top_priorities: ProductListItem[];
 }
@@ -214,6 +216,9 @@ export interface SettingsResponse {
   currency?: string | null;
   timezone?: string | null;
   sheets_connected: boolean;
+  sheets_connection_state: string;
+  sheets_connection_error?: string | null;
+  sheets_last_checked_at?: string | null;
   last_sync_at?: string | null;
 }
 

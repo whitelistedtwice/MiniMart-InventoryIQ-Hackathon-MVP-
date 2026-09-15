@@ -20,7 +20,10 @@ const SETTINGS_CONFIGURED: SettingsResponse = {
   business_type: 'Mini-mart',
   currency: 'USD',
   timezone: 'Asia/Phnom_Penh',
-  sheets_connected: true,
+  sheets_connected: false,
+  sheets_connection_state: 'configured',
+  sheets_connection_error: null,
+  sheets_last_checked_at: null,
   last_sync_at: '2026-09-14T08:30:00',
 };
 
@@ -30,6 +33,9 @@ const SETTINGS_UNCONFIGURED: SettingsResponse = {
   currency: null,
   timezone: null,
   sheets_connected: false,
+  sheets_connection_state: 'not_configured',
+  sheets_connection_error: null,
+  sheets_last_checked_at: null,
   last_sync_at: null,
 };
 
@@ -45,7 +51,7 @@ async function fulfillSettings(route: Route) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/v1/settings', fulfillSettings);
+  await page.route('**/api/v1/settings*', fulfillSettings);
 });
 
 test('settings renders the real backend contract and business profile', async ({
@@ -64,7 +70,9 @@ test('settings renders the real backend contract and business profile', async ({
 
   const connection = page.getByRole('region', { name: 'Google Sheets connection' });
   await expect(connection).toContainText('Configured');
-  await expect(connection).toContainText('Google Sheets credentials are configured.');
+  await expect(connection).toContainText(
+    'Credentials are configured; live connection not yet verified.',
+  );
   await expect(connection).toContainText(/14 Sep(t)? 2026/);
 });
 
@@ -105,7 +113,7 @@ test('missing optional values are handled safely without fabricated data', async
 test('shows a friendly error state and recovers on retry', async ({ page }) => {
   let settingsRequests = 0;
   let shouldFail = true;
-  await page.route('**/api/v1/settings', async (route) => {
+  await page.route('**/api/v1/settings*', async (route) => {
     settingsRequests += 1;
     if (!shouldFail) {
       await fulfillSettings(route);

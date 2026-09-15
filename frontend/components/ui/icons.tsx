@@ -25,7 +25,8 @@ export type IconName =
   | "arrow-right"
   | "arrow-left"
   | "calendar"
-  | "truck";
+  | "truck"
+  | "minus";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName };
 
@@ -131,6 +132,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="17.5" cy="18" r="1.8" />
     </>
   ),
+  minus: <path d="M5 12h14" />,
 };
 
 export function Icon({ name, ...props }: IconProps) {

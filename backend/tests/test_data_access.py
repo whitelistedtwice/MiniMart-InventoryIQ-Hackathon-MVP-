@@ -5,6 +5,8 @@ These use a fake spreadsheet object patched over `_open_spreadsheet`, so
 they never touch a real Google account or credentials.
 """
 
+import json
+
 import pytest
 import gspread
 
@@ -150,14 +152,19 @@ def test_read_failure_raises_clear_error(monkeypatch):
 def test_missing_sheet_id_raises_clear_error(monkeypatch):
     monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
     monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
     with pytest.raises(DataAccessError, match="GOOGLE_SHEET_ID is not set"):
         sheets._open_spreadsheet()
 
 
-def test_missing_credentials_file_env_raises_clear_error(monkeypatch):
+def test_missing_credentials_env_raises_clear_error(monkeypatch):
     monkeypatch.setenv("GOOGLE_SHEET_ID", "abc123")
     monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
-    with pytest.raises(DataAccessError, match="GOOGLE_SERVICE_ACCOUNT_FILE is not set"):
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    with pytest.raises(
+        DataAccessError,
+        match="Neither GOOGLE_SERVICE_ACCOUNT_JSON nor GOOGLE_SERVICE_ACCOUNT_FILE is set",
+    ):
         sheets._open_spreadsheet()
 
 
@@ -181,3 +188,148 @@ def test_inventory_and_shipments_stay_separate(fake_spreadsheet):
     assert raw["Inventory"][0]["quantity_on_hand"] == "15"
     assert raw["Shipments"][0]["quantity"] == "50"
     assert "Shipments" not in raw["Inventory"]
+
+
+# --------------------------------------------------------- Phase 16 deployment
+
+@pytest.fixture(autouse=True)
+def _clear_sheets_connection_cache():
+    yield
+    sheets._connection_cache.clear()
+
+
+def test_demo_mode_loads_demo_dataset(monkeypatch):
+    monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    raw = sheets.read_sheets()
+    assert "Products" in raw
+    assert "Sales" in raw
+    assert "Inventory" in raw
+    assert "Shipments" in raw
+    assert any(p["product_id"] == "coke-330" for p in raw["Products"])
+
+
+def test_open_spreadsheet_uses_service_account_json_env(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_JSON", '{"client_email": "x"}')
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+
+    from_dict_calls = []
+
+    class FakeClient:
+        def open_by_key(self, key):
+            self._key = key
+            return self
+
+    def fake_from_dict(info):
+        from_dict_calls.append(info)
+        return FakeClient()
+
+    monkeypatch.setattr(sheets.gspread, "service_account_from_dict", fake_from_dict)
+    result = sheets._open_spreadsheet()
+    assert from_dict_calls == [{"client_email": "x"}]
+    assert result is not None
+
+
+def test_open_spreadsheet_falls_back_to_service_account_file(monkeypatch, tmp_path):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    creds_file = tmp_path / "creds.json"
+    creds_file.write_text(json.dumps({"client_email": "x"}))
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", str(creds_file))
+
+    file_calls = []
+
+    class FakeClient:
+        def open_by_key(self, key):
+            self._key = key
+            return self
+
+    def fake_service_account(filename):
+        file_calls.append(filename)
+        return FakeClient()
+
+    monkeypatch.setattr(sheets.gspread, "service_account", fake_service_account)
+    result = sheets._open_spreadsheet()
+    assert str(creds_file) in file_calls
+    assert result is not None
+
+
+def test_connection_state_not_configured(monkeypatch):
+    monkeypatch.delenv("GOOGLE_SHEET_ID", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_FILE", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON", raising=False)
+    state = sheets.get_sheets_connection_state()
+    assert state["state"] == "not_configured"
+    assert state["error"] is None
+    assert state["last_checked"] is None
+
+
+def test_connection_state_connected(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "creds.json")
+    monkeypatch.setattr(sheets, "_probe_connection", lambda **kwargs: (True, None))
+    state = sheets.get_sheets_connection_state(force=True)
+    assert state["state"] == "connected"
+    assert state["error"] is None
+    assert state["last_checked"] is not None
+
+
+def test_connection_state_error(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "creds.json")
+    monkeypatch.setattr(
+        sheets, "_probe_connection", lambda **kwargs: (False, "bad creds")
+    )
+    state = sheets.get_sheets_connection_state(force=True)
+    assert state["state"] == "error"
+    assert state["error"] == "bad creds"
+
+
+def test_connection_state_configured_on_timeout(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "creds.json")
+    monkeypatch.setattr(
+        sheets,
+        "_probe_connection",
+        lambda **kwargs: (False, "probe timed out after 3s"),
+    )
+    state = sheets.get_sheets_connection_state(force=True)
+    assert state["state"] == "configured"
+
+
+def test_connection_state_cache_avoids_repeated_probes(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "creds.json")
+    calls = []
+    monkeypatch.setattr(
+        sheets,
+        "_probe_connection",
+        lambda **kwargs: (calls.append(1) or (True, None)),
+    )
+    sheets.get_sheets_connection_state(force=True)
+    sheets.get_sheets_connection_state()
+    assert len(calls) == 1
+
+
+def test_connection_state_force_bypasses_cache(monkeypatch):
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setenv("GOOGLE_SHEET_ID", "sheet-id")
+    monkeypatch.setenv("GOOGLE_SERVICE_ACCOUNT_FILE", "creds.json")
+    calls = []
+    monkeypatch.setattr(
+        sheets,
+        "_probe_connection",
+        lambda **kwargs: (calls.append(1) or (True, None)),
+    )
+    sheets.get_sheets_connection_state(force=True)
+    sheets.get_sheets_connection_state(force=True)
+    assert len(calls) == 2

@@ -34,7 +34,10 @@ export default function DashboardPage() {
   // healthy-everything, so the owner is not misled.
   const hasProducts =
     summary != null &&
-    summary.items_needing_attention + summary.healthy_items > 0;
+    summary.items_needing_attention +
+      summary.healthy_items +
+      summary.unavailable_items >
+      0;
 
   // AI loads only after the deterministic data is settled, so slow or failed
   // Gemini can never block the Dashboard.
@@ -104,6 +107,7 @@ export default function DashboardPage() {
           <BusinessHealth
             itemsNeedingAttention={summary.items_needing_attention}
             healthyItems={summary.healthy_items}
+            unavailableItems={summary.unavailable_items}
             totalInventoryValue={summary.total_inventory_value ?? null}
             currency={currency}
           />

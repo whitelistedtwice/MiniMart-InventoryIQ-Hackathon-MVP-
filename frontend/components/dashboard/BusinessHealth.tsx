@@ -10,12 +10,13 @@ import { formatCount, formatMoney } from "@/lib/format";
   null means unavailable and is shown as such, never as 0.
 */
 
-type Tone = "danger" | "success" | "brand";
+type Tone = "danger" | "success" | "brand" | "neutral";
 
 const TONES: Record<Tone, string> = {
   danger: "bg-danger-soft text-danger",
   success: "bg-success-soft text-success",
   brand: "bg-brand-soft text-brand",
+  neutral: "bg-canvas text-ink-soft",
 };
 
 function MetricCard({
@@ -51,11 +52,13 @@ function MetricCard({
 export function BusinessHealth({
   itemsNeedingAttention,
   healthyItems,
+  unavailableItems,
   totalInventoryValue,
   currency,
 }: {
   itemsNeedingAttention: number;
   healthyItems: number;
+  unavailableItems: number;
   totalInventoryValue: number | null;
   currency?: string | null;
 }) {
@@ -64,7 +67,7 @@ export function BusinessHealth({
   return (
     <section
       aria-label="Business health"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
     >
       <MetricCard
         icon="alert"
@@ -79,6 +82,13 @@ export function BusinessHealth({
         value={formatCount(healthyItems)}
         label="Healthy"
         hint="Products with no action needed"
+      />
+      <MetricCard
+        icon="minus"
+        tone="neutral"
+        value={formatCount(unavailableItems)}
+        label="Unavailable"
+        hint="Products with missing data"
       />
       <MetricCard
         icon="coins"

@@ -31,21 +31,22 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Verification: frontend negative-scope scan shows no Adjust Stock or
   write-back UI (Phase 11).
 
-## C-002 `sheets_connected` is environment-presence only
+## C-002 `sheets_connection_state` is a cached live probe
 
 - Severity: MEDIUM
-- Status: OPEN
+- Status: RESOLVED
 - Area: Settings / API
-- Discovered: Phase 8, confirmed Phase 9
-- Description: `GET /api/v1/settings` reports `sheets_connected: true` when
-  `GOOGLE_SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_FILE` env vars exist — it has
-  never attempted connectivity. Truthful states are required:
-  `Not Configured`, `Configured`, `Connected / Verified`, `Connection Error`.
-- Required resolution: introduce a connection-state model (additive contract
-  change + frontend type sync), probe real connectivity for `Connected`.
-- Owner: Phase 15
-- Verification: settings response shows `Connection Error` with bad
-  credentials and `Connected / Verified` with real credentials.
+- Discovered: Phase 8, resolved Phase 16
+- Description: `GET /api/v1/settings` now returns `sheets_connection_state`
+  (`not_configured`, `configured`, `connected`, `error`) from a cached live
+  probe of Google Sheets. `sheets_connected` remains for compatibility and is
+  `True` only when the probe succeeds. Demo mode correctly reports
+  `not_configured` because it does not use Sheets.
+- Required resolution: implemented in Phase 16.
+- Owner: Phase 16 (done)
+- Verification: tests in `tests/test_api.py` and `tests/test_data_access.py`
+  assert `not_configured`, `error`, and `connected` states; manual server
+  verification shows dashboard/settings return quickly in demo mode.
 
 ## C-003 Gemini default model was unavailable
 
@@ -93,45 +94,37 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Verification: live smoke test PASS (`ai_available: true`, structured fields
   parsed, deterministic quantity echoed unchanged).
 
-## C-006 Deployment: service-account file path not host-friendly
+## C-006 Deployment: service-account credentials as env string
 
 - Severity: HIGH
-- Status: OPEN
+- Status: RESOLVED
 - Area: Deployment
-- Discovered: Phase 9
-- Description: `app/data_access/sheets.py` reads credentials from a FILE path
-  (`GOOGLE_SERVICE_ACCOUNT_FILE`). PaaS hosts (Render/Railway/Fly/Vercel
-  functions) provide secrets as env strings, not files. Backend also targets
-  Python 3.14 locally; host runtime availability must be confirmed (3.13 is
-  the widely supported stable).
-- Required resolution: at deploy time, accept credentials as a base64 env var
-  decoded to a temp file (no code change), or extend the loader to accept an
-  inline JSON string (small code change). Confirm host Python runtime.
-- Owner: Phase 20
-- Verification: deployed backend reads Sheets successfully with env-provided
-  credentials.
+- Discovered: Phase 9, resolved Phase 16
+- Description: `app/data_access/sheets.py` now accepts
+  `GOOGLE_SERVICE_ACCOUNT_JSON` (raw JSON string) in addition to
+  `GOOGLE_SERVICE_ACCOUNT_FILE`. A `backend/Dockerfile` (Python 3.13 slim)
+  and `render.yaml` provide a Render deployment path. `requirements.txt`
+  was converted from UTF-16LE to UTF-8 so pip inside Docker can parse it.
+- Required resolution: implemented in Phase 16.
+- Owner: Phase 16 (done)
+- Verification: tests assert JSON env credential loading; Dockerfile and
+  render.yaml are present and reference the correct paths/variables.
 
-## C-007 Dashboard counts UNAVAILABLE products as healthy
+## C-007 Dashboard counts UNAVAILABLE products separately
 
 - Severity: MEDIUM
-- Status: OPEN
+- Status: RESOLVED
 - Area: Dashboard / API contract
-- Discovered: Phase 6, re-confirmed Phase 11
-- Description: `build_business_brief_context` counts every non-actionable
-  product — including `UNAVAILABLE` — as `healthy_items`. Phase 11 evidence:
-  with all inventory snapshots removed, the Dashboard rendered
-  "Need Attention 0 / Healthy 12" even though every product's stock was
-  unknown (while `total_inventory_value` correctly showed "—"). The Dashboard
-  displays backend truth verbatim; it cannot distinguish the two without a
-  contract change.
-- Required resolution: additive backend contract change: `unavailable_items`
-  on `DashboardSummary`/`AIBusinessBriefContext`; brief stops counting
-  UNAVAILABLE as healthy; frontend types and health card synced.
-- Owner: Not scheduled — backend contract change (the presentation-only
-  Phase 11 cannot resolve it; requires explicit approval per the
-  no-silent-contract-change rule).
-- Verification: dashboard with one UNAVAILABLE product shows
-  `unavailable_items: 1` and excludes it from `healthy_items`.
+- Discovered: Phase 6, resolved Phase 16
+- Description: `DashboardSummary` and `AIBusinessBriefContext` now include
+  `unavailable_items`. The backend counts only `NO ACTION` products as
+  `healthy_items`; `UNAVAILABLE` products are counted separately. The
+  frontend `BusinessHealth` card displays the new "Unavailable" count.
+- Required resolution: implemented in Phase 16.
+- Owner: Phase 16 (done)
+- Verification: `test_business_brief_unavailable_items_are_counted_separately`
+  and the demo-mode dashboard test assert the correct split
+  (8 attention, 3 healthy, 1 unavailable for the demo dataset).
 
 ## C-008 Repeated Google Sheets reads per logical operation
 
@@ -149,19 +142,17 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Owner: Phase 16 (decision), Phase 20 (if latency observed in deployment)
 - Verification: timing of demo page loads; request-count observation.
 
-## C-009 "profit" field must be labeled Estimated Profit
+## C-009 "profit" field is labeled Estimated Profit
 
 - Severity: LOW
-- Status: OPEN
+- Status: RESOLVED
 - Area: Analytics UI / financial labeling
-- Discovered: Phase 9
-- Description: `FinancialMetrics.profit` is sales×price − sales×cost (gross
-  only; no rent/salaries/tax). The backend field name is fine; only UI wording
-  must not imply net profit.
-- Required resolution: frontend label "Estimated Profit" (or "Estimated Gross
-  Profit") everywhere the field is displayed. No contract change.
-- Owner: Phase 14
-- Verification: UI text review in Phase 18 visual QA.
+- Discovered: Phase 9, resolved Phase 16
+- Description: The Analytics page labels the financial column
+  "Estimated Profit" and its explainer says "estimated gross profit".
+- Required resolution: implemented in Phase 16.
+- Owner: Phase 16 (done)
+- Verification: UI text review in `frontend/app/(app)/analytics/page.tsx`.
 
 ## C-010 Business Health has no invented score (keep it that way)
 
@@ -185,14 +176,14 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Area: Demo data
 - Discovered: Phase 9
 - Description: `backend/demo/cambodian_mini_mart.json` provides 12 realistic
-  products (Khmer+English names, USD prices, 14 days of sales, varied
-  scenarios: healthy, stockout, excess, shipments, zero-demand-ish slow
-  mover, missing lead time). It passes the full validation pipeline
-  (5 tests). It is not yet in an actual Google Sheet, so no end-to-end demo
-  against real Sheets is possible yet (also blocked by C-001).
-- Required resolution: create the demo Google Sheet, paste/upload the four
-  tabs, connect credentials, verify via `/api/v1/dashboard`.
-- Owner: Phase 16 (integration), depends on C-001 (Phase 13)
+  products and passes the full validation pipeline. Phase 16 added
+  `DEMO_MODE=true`, which loads this JSON directly so the app is demoable
+  without a real Sheet. A real Google Sheet with the same tabs is still not
+  created.
+- Required resolution: create the demo Google Sheet and connect credentials
+  to verify the live pipeline end-to-end. Demo mode mitigates this for
+  hackathon demos.
+- Owner: Phase 16+ (integration), depends on C-001 (out of scope)
 - Verification: live dashboard/analytics responses against the real sheet.
 
 ## C-012 Shipment arriving TODAY — semantics locked
@@ -233,20 +224,17 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 - Verification: frontend negative-scope scan shows no Adjust Stock or stock
   editing UI (Phase 11).
 
-## C-014 Business Profile persistence — decision locked
+## C-014 Business Profile persistence via environment
 
 - Severity: LOW
-- Status: OPEN (decision made; implementation pending)
-- Area: Settings (Phase 15)
+- Status: RESOLVED
+- Area: Settings (Phase 15/16)
 - Discovered: Phase 9
-- Description: No persistence exists; `business_name`/`business_type` are
-  always null. Decision: single business, so persist via env vars
-  (`BUSINESS_NAME`, `BUSINESS_TYPE`) — zero infrastructure. A new optional
-  `Settings` tab in the demo Sheet is the fallback if UI editing is later
-  required (not planned).
-- Required resolution: implement env-var persistence (`BUSINESS_NAME`,
-  `BUSINESS_TYPE`) in Phase 15; no database.
-- Owner: Phase 15
+- Description: `BUSINESS_NAME`, `BUSINESS_TYPE`, and `BUSINESS_CURRENCY`
+  are read from environment variables by `app/core/business.py`. No
+  database, account system, or write path exists.
+- Required resolution: implemented.
+- Owner: Phase 15/16 (done)
 - Verification: settings response reflects configured env values; no DB.
 
 ## C-015 Frontend API client / base-URL configuration
@@ -332,18 +320,16 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
 ## C-020 CORS configuration for production
 
 - Severity: LOW
-- Status: OPEN
+- Status: RESOLVED
 - Area: Deployment / security
 - Discovered: Phase 9
-- Description: Local CORS verified live (allowed origin receives
-  `access-control-allow-origin`, disallowed origin receives nothing,
-  preflight OK, methods GET/OPTIONS only). Production origins must be set via
-  `CORS_ALLOW_ORIGINS` at deploy time; defaults only cover localhost.
-- Required resolution: set `CORS_ALLOW_ORIGINS` to the deployed frontend
-  origin(s) at deploy time.
-- Owner: Phase 20
+- Description: `main.py` reads allowed origins from `CORS_ALLOW_ORIGINS`.
+  `render.yaml` declares it as a manual env var and `docs/DEPLOYMENT.md`
+  instructs setting it to the deployed frontend origin.
+- Required resolution: set `CORS_ALLOW_ORIGINS` at deploy time.
+- Owner: Phase 16 (done)
 - Verification: deployed frontend fetches deployed backend without CORS
-  errors.
+  errors (to be confirmed after actual deployment).
 
 ## C-021 Sheets read failures surface as 502 with upstream message
 
@@ -384,21 +370,17 @@ Severities: `CRITICAL` `HIGH` `MEDIUM` `LOW`
   product B AI insight" and the list tests confirm no second search control
   fires or exists.
 
-## C-023 No currency is provided by the backend
+## C-023 Currency is provided by the backend and used everywhere
 
 - Severity: LOW
-- Status: OPEN
+- Status: RESOLVED
 - Area: Dashboard / Analytics / API contract
 - Discovered: Phase 11
-- Description: Financial values (e.g. `total_inventory_value`) have no
-  currency in any contract, so the Dashboard shows e.g. "1,180.05" without a
-  symbol. During Phase 11 verification, Gemini's brief independently wrote
-  "$1,180.05" — the AI inferred a currency the deterministic layer never
-  stated. The Settings UI spec expects a currency field "when supported";
-  C-014 plans env-based business profile in Phase 15.
-- Required resolution: add currency to the business profile/configuration
-  (Phase 15, with C-014) and expose it to the frontend; format financial
-  values consistently from that value.
-- Owner: Phase 15
+- Description: `business_currency()` reads `BUSINESS_CURRENCY` from env and
+  the backend passes it through SettingsResponse and all AI contexts. The
+  frontend `formatMoney` uses the configured currency and falls back to
+  plain amounts when unset. Gemini is instructed not to invent a currency.
+- Required resolution: implemented in Phase 15/16.
+- Owner: Phase 15/16 (done)
 - Verification: financial values display the configured currency; no
-  hardcoded currency symbol exists in the frontend.
+  hardcoded currency symbol exists in frontend source.
