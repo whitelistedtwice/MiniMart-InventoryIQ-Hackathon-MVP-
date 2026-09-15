@@ -48,12 +48,14 @@ export function formatStock(value: number | null | undefined): string {
 }
 
 /**
- * ISO date (YYYY-MM-DD) from the backend, formatted for display.
- * Parsed as a plain calendar date so the timezone never shifts the day.
+ * ISO date (YYYY-MM-DD) or datetime (YYYY-MM-DDTHH:mm:ss) from the backend,
+ * formatted for display. Only the calendar portion is used so the timezone
+ * never shifts the day.
  */
 export function formatDate(value: string | null | undefined): string {
   if (!value) return MISSING;
-  const [year, month, day] = value.split("-").map(Number);
+  const datePart = value.split(/[T ]/)[0];
+  const [year, month, day] = datePart.split("-").map(Number);
   if (!year || !month || !day) return value;
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
