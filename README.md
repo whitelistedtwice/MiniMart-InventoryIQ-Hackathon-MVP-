@@ -1,4 +1,5 @@
-# InventoryIQ
+# InventoryIQ (MiniMart)
+
 
 An inventory intelligence tool for **Cambodian mini-mart owners**. It turns
 existing sales and inventory data into simple, practical restocking
